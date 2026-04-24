@@ -31,18 +31,18 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 db = VectorDB("okolab_rag.db")
 
 def reset_session():
-    """Garante uma sessão limpa: deleta arquivos manuais e reseta o DB."""
-    print("[SYSTEM] Performing Session Reset...")
+    """Garantisce una sessione pulita: elimina file manuali e resetta il DB."""
+    print("[SYSTEM] Esecuzione Reset Sessione...")
     
-    # 1. Limpa arquivos físicos
+    # 1. Pulizia file fisici
     if os.path.exists("manuals"):
         for f in os.listdir("manuals"):
             file_path = os.path.join("manuals", f)
             try:
                 if os.path.isfile(file_path): os.unlink(file_path)
-            except Exception as e: print(f"Error cleaning {f}: {e}")
+            except Exception as e: print(f"Errore durante la pulizia di {f}: {e}")
             
-    # 2. Reseta o Banco de Dados Vetorial (Mantendo a estrutura)
+    # 2. Reset del Database Vettoriale (Mantenendo la struttura)
     db = VectorDB("okolab_rag.db")
     try:
         db.conn.execute("DELETE FROM chunks")
@@ -50,9 +50,9 @@ def reset_session():
         db.conn.execute("VACUUM")
         db.conn.commit()
     except Exception as e:
-        print(f"DB Reset Warning: {e} - Re-initializing...")
+        print(f"Avviso Reset DB: {e} - Re-inizializzazione...")
         db._init_db()
-    print("[SYSTEM] Clean Slate: All previous knowledge purged.")
+    print("[SYSTEM] Tabula Rasa: Tutta la conoscenza precedente è stata epurata.")
 
 @app.on_event("startup")
 async def startup_event():

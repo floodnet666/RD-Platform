@@ -1,39 +1,56 @@
-# OKO-Agent: Infrastruttura di Intelligenza R&D On-Premise
+# OKOLAB R&D PLATFORM
+### *High Fidelity Engineering Intelligence | Zero-Cloud Architecture*
 
-> **Manifesto Tecnico per l'Eccellenza Ingegneristica in Okolab.**
-
-## 1. Visione: Oltre l'IA, verso l'Ingegneria Deterministica
-Nell'ecosistema R&D di Okolab, l'efficienza non è un desiderio, è una necessità termodinamica. **OKO-Agent** nasce per eliminare l'entropia informativa nei processi di sviluppo firmware e meccanico. Non è un semplice chatbot; è un **Orchestratore di Conoscenza** progettato per agire come un Senior Engineer sintetico, integrato nel cuore dell'infrastruttura aziendale.
-
-## 2. Pilastri dell'Architettura "Zero Bloat"
-L'architettura segue rigorosamente i principi di **Extreme Programming (XP)** e **Test-Driven Development (TDD)**, garantendo un sistema ad alta densità e bassa latenza.
-
-*   **Sovranità del Dato (On-Premise)**: Tutto il sistema, dal modello linguistico (Gemma-4-E2B) al database vettoriale (sqlite-vec), risiede localmente. Nessun bit di proprietà intellettuale Okolab lascia la rete aziendale.
-*   **Riduzione dell'Entropia (Deterministico)**: Le domande sulle distinte base (BOM) non vengono "indovinate" dall'IA. Vengono eseguite tramite il motore **Polars (Rust-based)**, garantendo precisione matematica assoluta (Zero Allucinations).
-*   **Tracciabilità Totale (Citation Engine)**: Ogni risposta tecnica è supportata da citazioni esatte ai manuali (Documento + Pagina), eliminando l'incertezza operativa.
-
-## 3. Capacità Core della Piattaforma
-
-### 🧠 Motore di Conoscenza RAG (Manuali e Datasheet)
-Integrazione dinamica di documentazione tecnica. Il sistema digerisce PDF complessi, li segmenta semanticamente e rende accessibile istantaneamente ogni specifica di sensori o procedure di calibrazione.
-
-### ⚙️ Analista di Firmware (Code Intelligence)
-Capacità di analizzare repository Git (pubblici e privati via PAT Token). Il sistema "legge" il codice C/C++ e Python, generando documentazione tecnica, spiegando loop di controllo e suggerendo refactoring basati su logica di ingegneria.
-
-### 📊 Engine BOM Determinante
-Interfaccia in linguaggio naturale per database strutturati. Permette calcoli complessi di costi e disponibilità componenti con la velocità e l'affidabilità di una query SQL pura, mediata da un'interfaccia umana.
-
-## 4. Esperienza Utente: Il Dashboard R&D
-Progettato con l'estetica industriale Okolab, il dashboard bilingue (IT/EN) offre:
-*   **Live Terminal**: Trasparenza totale sui processi decisionali dell'agente (Log del Grafo LangGraph).
-*   **Dynamic Assets**: Caricamento e rimozione immediata di file per sessioni di lavoro agili.
-*   **High-Density Design**: Interfaccia ottimizzata per monitor da laboratorio, focalizzata sulla densità informativa.
-
-## 5. Roadmap e Scalabilità
-*   **Fase 10**: Integrazione diretta con telemetria real-time delle incubatrici Okolab per diagnostica predittiva.
-*   **Fase 11**: Generazione automatica di manuali utente (Long-form generation) sincronizzata con ogni release di firmware.
+![Okolab Logo](https://img.shields.io/badge/Okolab-R%26D-C53030?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Industrial_Ready-10B981?style=for-the-badge)
+![Engine](https://img.shields.io/badge/Engine-Gemma_2B-38BDF8?style=for-the-badge)
 
 ---
 
-**Sviluppato con Rigore Scientifico. Progettato per l'Ingegneria Italiana.**
-*Thiago Cordeiro Mendonça*
+## 🇮🇹 Manifesto Tecnico (Pozzuoli HQ)
+La piattaforma Okolab R&D è un ecosistema di **Ingegneria Deterministica** progettato per eliminare il divario tra dati grezzi (CAD/BIM) e documentazione tecnica. In un mondo dominato da soluzioni cloud generiche, Okolab opera in isolamento totale, garantendo che la proprietà intellettuale non lasci mai il perimetro aziendale.
+
+### Core Capabilities:
+1.  **Analisi BIM Deterministica**: Trasformazione automatica di modelli IFC in Distinte Base (BOM) tramite motori **Rust (Polars)** ad alte prestazioni. Il sistema não "adivinha" os quantitativos; esegue query SQL reali sui metadati estratti, garantendo precisione millimetrica.
+2.  **RAG Tecnico ad Alta Granularità**: Consultazione di migliaia di documenti PDF tramite **SQLite-Vec**. Ogni risposta è ancorata a una **Citazione Certificata**, indicando il file sorgente, o capítulo e o número exato da página.
+3.  **Documentazione Evolutiva**: Generazione di README, changelog e piani di test del firmware direttamente dalla codebase esistente, analizzando migliaia di righe di código C/Python in pochi secondi.
+
+---
+
+## 🧠 Orchestrazione & Agenti
+La piattaforma opera tramite una rete di **Agenti Autonomi** orchestrati da **LangGraph**. A differenza dei chatbot lineari, il nostro sistema utilizza un **Rilevamento Semantico dell'Intento**:
+
+- **BOM Agent**: Equipaggiato con il parser IFC, estrae la gerarchia spaziale e i materiali.
+- **Code Agent**: Mappa dipendenze e logica di firmware critici.
+- **RAG Agent**: Gestisce l'indicizzazione e il recupero vettoriale su larga scala con citazioni precise.
+
+---
+
+## 🏗️ Architettura & Scalabilità Industriale
+Sviluppata seguendo i principi di **Termodinamica del Software**, la piattaforma minimizza l'entropia del codice garantendo prestazioni industriali:
+- **FastAPI & LangGraph**: Per un'orchestrazione di stati asincrona e robusta.
+- **Big Data CAD (Polars)**: Capacità di processare file IFC con decine di migliaia di elementi senza degrado delle prestazioni.
+- **Massive Document Library**: Gestione di migliaia di manuali tramite ricerca vettoriale **SQLite-Vec** locale e istantanea.
+
+---
+
+## 👨‍💻 Thiago C. Mendonça
+*Senior Software Architect & System Designer*
+
+Questa piattaforma non è solo uno strumento; è una prova di **Ingegneria di Precisione**. Dalla gestione rigorosa della memoria alla pulizia delle sessioni (Protocollo Tabula Rasa), ogni riga di codice è stata scritta per resistere alle condizioni critiche del settore R&D industriale.
+
+---
+**Links Professionali:**
+- [**LinkedIn**](https://www.linkedin.com/in/thiagomendonca/)
+- [**Curriculum Vitae (Digital)**](https://floodnet666.github.io/CV.2026/cv.final.html)
+
+---
+
+## 🛠️ Inizializzazione Rapida
+Per istruzioni dettagliate sul setup e sulla configurazione dei modelli AI, consultare il file [INSTALL.md](./INSTALL.md).
+
+```bash
+docker-compose up --build -d
+```
+
+*Okolab R&D Platform - Built for Excellence.*

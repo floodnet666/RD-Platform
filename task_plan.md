@@ -1,24 +1,29 @@
-# Oko-Agent MVP Implementation Plan
+# Piano Operativo di Ingegneria: Okolab AI Platform
 
-## Goal
-Construir o MVP on-premise "Oko-Agent" para a Okolab utilizando Gemma-4 local, SQLite Vector (sqlite-vec/sqlite-vss) para o RAG baseado na arquitetura do Orientador.IA, e Motor Determinístico (Polars) baseado no The Council v2. Realizar o download dos manuais da Okolab para vetorização.
+## 🎯 Obiettivi Strategici
+Costruire una piattaforma IA autonoma per l'automazione della documentazione e l'analisi deterministica dei dati CAD/BIM per Okolab.
 
-## Phases
+## 🧱 Sprint di Sviluppo
 
-### Phase 1: Setup & Planning
-- [x] Create planning files (task_plan, findings, progress).
-- [ ] Analisar sistema de RAG do projeto Orientador.IA.
-- [ ] Definir a arquitetura do SQLite Vector DB e do pipeline de ingestão.
+### Fase 1: Fondamenta e RAG
+- [x] Setup Backend FastAPI + LangGraph.
+- [x] Implementazione VectorDB locale (SQLite-Vec).
+- [x] Sistema de Ingestão de Ativos (PDF/IFC).
 
-### Phase 2: Data Acquisition (Okolab Manuals)
-- [ ] Inspecionar `https://oko-lab.com/downloads/` para extrair links de PDFs.
-- [ ] Fazer o download de todos os manuais para `D:\OKOlab\manuals`.
+### Fase 2: Motore Deterministico (BOM)
+- [x] Integrazione IfcOpenShell per estrazione metadati.
+- [x] Conversione IFC -> Polars SQL Engine.
+- [x] Agente di Routing Semantico (Router Node).
 
-### Phase 3: RAG & DB Implementation
-- [ ] Configurar o banco SQLite com plugin de vetores (sqlite-vec).
-- [ ] Criar o script de ingestão, chunking e vetorização (via embeddings locais) dos manuais baixados.
+### Fase 3: UX e Consolidamento
+- [x] Frontend React con layout "High Fidelity".
+- [x] Protocollo "Tabula Rasa" per la pulizia delle sessioni.
+- [x] Traduzione completa della piattaforma in Italiano Industriale.
 
-### Phase 4: LangGraph & Deterministic Engine
-- [ ] Construir o orquestrador (LangGraph).
-- [ ] Integrar o Polars para mock de BOM.
-- [ ] Integrar LLM Engine (Ollama / Gemma-4-E2B).
+## 🛡️ Criteri di Accettazione
+- [x] Superamento dei test E2E (TDD Suite).
+- [x] Latenza di inferenza locale accettabile (<2s per il routing).
+- [x] Zero fughe di dati (Zero-Cloud Compliance).
+
+---
+**Lead Engineer: Thiago C. Mendonça**

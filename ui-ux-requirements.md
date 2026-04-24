@@ -1,38 +1,19 @@
-# UI/UX Requirements: OKO-Agent "R&D Intelligence"
+# Manifesto di Design Industriale: Okolab UI/UX
 
-## 1. Brand Identity (Okolab)
-- **Primary Color:** `#E30613` (Okolab Red) - Usado no logotipo e acentos de status crítico.
-- **Secondary Color:** `#0056A4` (Okolab Blue) - Usado para links técnicos e botões de ação.
-- **Backgrounds:** 
-  - `Surface 100`: `#FFFFFF` (Main Background)
-  - `Surface 200`: `#F8F9FA` (Side Panels)
-  - `Surface 300`: `#E9ECEF` (Borders/Dividers)
-- **Typography:** 
-  - Main: `Inter` (Clean, Biomedical aesthetic)
-  - Monospace: `Fira Code` or `JetBrains Mono` (Terminal/Code results)
+## 🎨 Filosofia Visiva
+L'interfaccia Okolab R&D non è un semplice software; è uno **strumento di precisione**. Il design segue la filosofia del "Minimalismo Funzionale", ispirato agli strumenti di laboratorio di alta precisione.
 
-## 2. Layout Structure (Dashboard Grid)
-- **Global Header:** 
-  - Esquerda: Logotipo Okolab (SVG) + Nome do Projeto "R&D Intelligence".
-  - Centro: Badge de Modelo Ativo (`Gemma-4-e2b [Ollama]`).
-  - Direita: Status de Segurança ("SECURE NODE: POZZUOLI HQ") com indicador LED verde pulsante.
-- **Navigation Sidebar (Left):**
-  - Lista de Módulos (Agent Registry, Vector Knowledge, Workflow Designer, Telemetry).
-  - Terminal em tempo real (Dark background `#0F172A`) na parte inferior para logs de execução do LangGraph.
-- **Main Stage (Center):**
-  - Grid de Cards para "Deployed Tools" (ex: `generate_firmware_doc`, `generate_bom_from_cad`).
-  - Cada card deve ter um ícone minimalista e descrição técnica clara.
-- **Testing Harness (Bottom/Detail):**
-  - Split view para "Simulated LLM Input" e "Execution Output".
+### Principi Cardine:
+1.  **Integrità del Layout**: Il sistema deve rimanere stabile (100vh) indipendentemente dal volume di dati generati. L'uso di Flexbox con restrizioni di overflow garantisce la persistenza delle sidebars.
+2.  **Gerarchia dell'Informazione**: 
+    - **Rosso Okolab (#C53030)**: Utilizzato esclusivamente per elementi critici, loghi e azioni primarie.
+    - **Surface 200/300**: Grigio neutro per ridurre l'affaticamento visivo durante sessioni di analisi prolungate.
+3.  **Feedback Dinamico**: Il "Live Terminal" fornisce una trasparenza totale sui processi cognitivi dell'IA, riducendo l'incertezza dell'utente.
 
-## 3. Interaction Design
-- **Micro-animations:** Transições suaves de 200ms em hovers de cards.
-- **Visual Feedback:** 
-  - Loading states em botões ("Execute Tool").
-  - Skeleton screens para carregamento de grandes massas de dados do RAG.
-- **Zero Bloat Policy:** Nenhuma imagem decorativa. Todo ícone deve ser SVG inline funcional.
+## 🛠️ Specifiche Tecniche UI
+- **Typography**: Inter (Google Fonts) per la massima leggibilità tecnica.
+- **Micro-interazioni**: Hover effects reattivi sulla lista degli asset e auto-scroll intelligente nel thread di collaborazione.
+- **Resilienza**: Word-wrap forzato e word-break per prevenire rotture orizzontali causate da JSON o frammenti di codice.
 
-## 4. Technical Constraints
-- **Framework:** React + Vite.
-- **Styling:** CSS puro com variáveis customizadas para facilitar o "White-labeling" se necessário.
-- **Responsive:** Foco primário em Desktop 1920x1080 (ambiente de laboratório).
+---
+**Design Architect: Thiago C. Mendonça**

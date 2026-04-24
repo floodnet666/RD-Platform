@@ -20,28 +20,28 @@ class AgentState(TypedDict):
     language: str
 
 def router_node(state: AgentState):
-    """Agente de Roteamento Semântico. Analisa a intenção sem heurísticas rígidas."""
+    """Agente di Routing Semantico. Analizza l'intento senza euristiche rigide."""
     last_msg = state["messages"][-1]
     
     prompt = f"""
-    Analise o pedido do usuário e classifique em UMA das categorias abaixo:
-    - 'BOM': Perguntas sobre contagem de peças, preços, materiais, extração de dados de arquivos IFC/CSV.
-    - 'MANUAL': Pedidos para gerar, criar ou escrever documentação técnica para USUÁRIOS FINAIS.
-    - 'CODE': Perguntas sobre firmware, funções, lógica de código ou pedidos de DOCUMENTAÇÃO de arquivos fonte (.py, .c).
-    - 'RAG': Perguntas genéricas sobre sensores, calibração ou instruções contidas em manuais PDF.
+    Analizza la richiesta dell'utente e classificala in UNA delle categorie seguenti:
+    - 'BOM': Domande su conteggio pezzi, prezzi, materiali, estrazione dati da file IFC/CSV.
+    - 'MANUAL': Richieste per generare, creare o scrivere documentazione tecnica per UTENTI FINALI.
+    - 'CODE': Domande su firmware, funzioni, logica di codice o richieste di DOCUMENTAZIONE di file sorgente (.py, .c).
+    - 'RAG': Domande generiche su sensori, calibrazione o istruzioni contenute nei manuali PDF.
     
-    Usuário: "{last_msg}"
-    Responda APENAS o nome da categoria.
+    Utente: "{last_msg}"
+    Rispondi SOLO con il nome della categoria.
     """
     
-    intent_raw = call_gemma(prompt, "Você é o Cérebro de Roteamento da Okolab R&D.")
+    intent_raw = call_gemma(prompt, "Sei il Cervello di Routing di Okolab R&D.")
     intent = intent_raw.strip().upper()
     
-    # Normalização e Fallback
+    # Normalizzazione e Fallback
     valid_intents = ["BOM", "MANUAL", "CODE", "RAG"]
     final_intent = next((i.lower() for i in valid_intents if i in intent), "rag")
     
-    print(f"\n[ORCHESTRATOR] 🧠 Intent Detected: {final_intent.upper()}")
+    print(f"\n[ORCHESTRATOR] 🧠 Intento Rilevato: {final_intent.upper()}")
     return {"intent": final_intent}
 
 def rag_node(state: AgentState):
