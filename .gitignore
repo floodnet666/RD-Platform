@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+.env
+
+# Build
+dist/
+node_modules/
+
+# Database & Storage
+manuals/*.pdf
+manuals/*.ifc
+manuals/*.csv
+manuals/*.md
+okolab_rag.db
+*.log
+
+# Docker
+.docker_data/

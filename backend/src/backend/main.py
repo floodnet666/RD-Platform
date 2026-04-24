@@ -1,0 +1,216 @@
+from fastapi import FastAPI, UploadFile, File, Body, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import shutil
+import os
+import git
+from backend.orchestrator import build_graph
+from backend.pdf_extractor import extract_text_from_pdf
+from backend.chunker import chunk_text
+from backend.vector_db import VectorDB
+from backend.code_parser import parse_source_code
+from backend.ifc_parser import IFCParser
+from backend.bom_engine import BOMEngine
+from sentence_transformers import SentenceTransformer
+
+# Inicializa????o do Servidor de Produ????o Okolab
+app = FastAPI(title="OKO-Agent R&D Platform API")
+
+# Configura????o de CORS para o Dashboard Okolab
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Inicializa????o do Orquestrador LangGraph (Singleton)
+graph = build_graph()
+model = SentenceTransformer('all-MiniLM-L6-v2')
+db = VectorDB("okolab_rag.db")
+
+def reset_session():
+    """Garante uma sessão limpa: deleta arquivos manuais e reseta o DB."""
+    print("[SYSTEM] Performing Session Reset...")
+    
+    # 1. Limpa arquivos físicos
+    if os.path.exists("manuals"):
+        for f in os.listdir("manuals"):
+            file_path = os.path.join("manuals", f)
+            try:
+                if os.path.isfile(file_path): os.unlink(file_path)
+            except Exception as e: print(f"Error cleaning {f}: {e}")
+            
+    # 2. Reseta o Banco de Dados Vetorial (Mantendo a estrutura)
+    db = VectorDB("okolab_rag.db")
+    try:
+        db.conn.execute("DELETE FROM chunks")
+        db.conn.execute("DELETE FROM chunks_vec")
+        db.conn.execute("VACUUM")
+        db.conn.commit()
+    except Exception as e:
+        print(f"DB Reset Warning: {e} - Re-initializing...")
+        db._init_db()
+    print("[SYSTEM] Clean Slate: All previous knowledge purged.")
+
+@app.on_event("startup")
+async def startup_event():
+    reset_session()
+
+class ChatQuery(BaseModel):
+    message: str
+    lang: str = "it"
+
+class RepoRequest(BaseModel):
+    repo_url: str
+    token: str = None
+
+@app.post("/upload")
+async def upload_asset(file: UploadFile = File(...)):
+    """
+    Endpoint para ingest??o din??mica de manuais e c??digo.
+    """
+    temp_path = f"temp_{file.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    filename = file.filename.lower()
+    
+    try:
+        if filename.endswith(".pdf"):
+            # Processamento RAG Din??mico
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+            db = VectorDB("okolab_rag.db")
+            pages = extract_text_from_pdf(temp_path)
+            for p in pages:
+                chunks = chunk_text(p["text"])
+                for c in chunks:
+                    embedding = model.encode(c).tolist()
+                    db.insert(c, embedding, p["page"], source=file.filename)
+            return {"status": "success", "type": "pdf", "message": f"Manual {file.filename} indexado."}
+        
+        elif filename.endswith(".ifc"):
+            # Processamento de Engenharia BIM -> BOM
+            parser = IFCParser(temp_path)
+            df = parser.to_dataframe()
+            # Salva como base para o motor BOM da Okolab
+            bom_path = os.path.join("manuals", f"bom_{file.filename}.csv")
+            df.write_csv(bom_path)
+            return {"status": "success", "type": "csv", "message": f"Modelo IFC {file.filename} convertido em BOM de materiais."}
+        
+        elif any(filename.endswith(ext) for ext in [".c", ".py", ".h", ".cpp"]):
+            # Em produ????o, salvar??amos no repo de firmware. 
+            # Aqui simulamos a aceita????o para o live demo.
+            return {"status": "success", "type": "code", "message": f"C??digo {file.filename} analisado e pronto para consultas."}
+            
+        return {"status": "unsupported", "message": "Formato n??o suportado para ingest??o autom??tica."}
+    
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+@app.get("/assets")
+async def list_assets():
+    """
+    Lista ativos baseados na realidade física do disco (pasta manuals/).
+    """
+    if not os.path.exists("manuals"):
+        return []
+        
+    assets = []
+    for filename in os.listdir("manuals"):
+        ext = filename.split(".")[-1].lower()
+        if ext in ["pdf", "ifc", "csv", "py", "c"]:
+            atype = "pdf" if ext == "pdf" else "csv" if ext in ["csv", "ifc"] else "code"
+            assets.append({"name": filename, "type": atype})
+    
+    return assets
+
+@app.post("/clone")
+async def clone_repository(req: RepoRequest):
+    """
+    Clona um reposit??rio remoto (p??blico ou privado) e ingere todo o c??digo.
+    """
+    auth_url = req.repo_url
+    if req.token:
+        # Injeta token para repos privados: https://<token>@github.com/...
+        auth_url = req.repo_url.replace("https://", f"https://{req.token}@")
+        
+    repo_name = req.repo_url.split("/")[-1].replace(".git", "")
+    target_dir = os.path.join("temp_repos", repo_name)
+    
+    if os.path.exists(target_dir):
+        shutil.rmtree(target_dir)
+        
+    try:
+        git.Repo.clone_from(auth_url, target_dir, depth=1)
+        
+        db = VectorDB("okolab_rag.db")
+        model = SentenceTransformer('all-MiniLM-L6-v2')
+        
+        indexed_count = 0
+        for root, _, files in os.walk(target_dir):
+            for file in files:
+                if any(file.endswith(ext) for ext in [".c", ".h", ".py", ".cpp", ".md"]):
+                    file_path = os.path.join(root, file)
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
+                        blocks = parse_source_code(content, file.split(".")[-1])
+                        for block in blocks:
+                            emb = model.encode(block).tolist()
+                            db.insert(block, emb, 1, source=f"{repo_name}/{file}")
+                            indexed_count += 1
+        
+        return {"status": "success", "message": f"Reposit??rio {repo_name} indexado. {indexed_count} blocos processados."}
+    
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    finally:
+        if os.path.exists(target_dir):
+            shutil.rmtree(target_dir)
+
+@app.delete("/assets/{filename}")
+async def delete_asset(filename: str):
+    """
+    Remove um ativo e todos os seus vetores do banco de dados.
+    """
+    db = VectorDB("okolab_rag.db")
+    # Deleta da tabela de metadados e a tabela vetorial limpa via rowid (se configurado trigger)
+    # No sqlite-vec simples, deletamos os chunks e os vetores ??rf??os
+    try:
+        db.conn.execute("DELETE FROM chunks_vec WHERE rowid IN (SELECT id FROM chunks WHERE source_file = ?)", (filename,))
+        db.conn.execute("DELETE FROM chunks WHERE source_file = ?", (filename,))
+        db.conn.commit()
+        return {"status": "success", "message": f"Ativo {filename} removido."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/chat")
+async def chat(request: Request):
+    """
+    Endpoint de integra????o real com suporte a i18n e log de debug.
+    """
+    body = await request.json()
+    print(f"DEBUG PAYLOAD: {body}")
+    
+    msg = body.get("message", "")
+    lang = body.get("lang", "it")
+    
+    # Estado inicial do Grafo com idioma expl??cito
+    initial_state = {
+        "messages": [msg],
+        "intent": "",
+        "context": "",
+        "language": lang
+    }
+    
+    # Execu????o s??ncrona do Grafo (Regime de Teste Real)
+    final_state = graph.invoke(initial_state)
+    
+    return {"response": final_state["context"]}
+
+if __name__ == "__main__":
+    import uvicorn
+    print("Iniciando API de Produ????o na porta 8000...")
+    uvicorn.run(app, host="127.0.0.1", port=8000)

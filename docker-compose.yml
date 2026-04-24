@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: oko_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      # Ignora o .venv local para usar o do contêiner
+      - /app/.venv
+    environment:
+      - PYTHONPATH=/app/src
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build: ./frontend
+    container_name: oko_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Evita conflitos de node_modules entre OS e Docker
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Garante Hot Reload em sistemas Windows/WSL
+    depends_on:
+      - backend
