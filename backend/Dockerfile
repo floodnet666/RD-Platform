@@ -18,9 +18,14 @@ COPY pyproject.toml uv.lock ./
 # Instalação das dependências no modo --frozen (usando o lockfile)
 RUN uv sync --frozen --no-cache
 
+# Pré-download do modelo de embeddings para operação 100% Offline
+COPY download_models.py .
+RUN uv run python download_models.py
+
 # O código será montado via Volume no Docker Compose para permitir Hot Reload
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/src"
+ENV SENTENCE_TRANSFORMERS_HOME="/app/models"
 
 EXPOSE 8000
 

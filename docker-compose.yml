@@ -13,6 +13,9 @@ services:
     environment:
       - PYTHONPATH=/app/src
       - OLLAMA_HOST=http://host.docker.internal:11434
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
+      - SENTENCE_TRANSFORMERS_HOME=/app/models
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
