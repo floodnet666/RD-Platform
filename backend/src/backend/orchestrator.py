@@ -57,8 +57,9 @@ def rag_node(state: AgentState):
     
     context = "\n---\n".join(context_parts)
     
-    prompt = f"Contexto Técnico R&D PLATFORM:\n{context}\n\nPergunta: {query}\n\nInstrução: Responda obrigatoriamente no idioma [{state['language'].upper()}]. Seja técnico e cite a [Página X]."
-    answer = call_gemma(prompt, f"Você é um assistente de engenharia da R&D PLATFORM. Responda em {state['language']}.")
+    lang = state.get("language", "it")
+    prompt = f"Contexto Técnico R&D PLATFORM:\n{context}\n\nPergunta: {query}\n\nInstrução: Responda obrigatoriamente no idioma [{lang.upper()}]. Seja técnico e cite a [Página X]."
+    answer = call_gemma(prompt, f"Você é um assistente de engenharia da R&D PLATFORM. Responda em {lang}.")
     return {"context": answer}
 
 def bom_node(state: AgentState):
@@ -125,7 +126,8 @@ def code_node(state: AgentState):
     
     context = "\n---\n".join(context_parts)
     
-    prompt = f"Analise o seguinte trecho de firmware/código da R&D PLATFORM:\n{context}\n\nTarefa: {query}\n\nInstrução: Baseie sua resposta estritamente no código fornecido. Responda no idioma: {state['language']}"
+    lang = state.get("language", "it")
+    prompt = f"Analise o seguinte trecho de firmware/código da R&D PLATFORM:\n{context}\n\nTarefa: {query}\n\nInstrução: Baseie sua resposta estritamente no código fornecido. Responda no idioma: {lang}"
     answer = call_gemma(prompt, "Você é um Engenheiro de Firmware Sênior da R&D PLATFORM, especialista em análise estática e lógica de controle.")
     return {"context": answer}
 
@@ -141,6 +143,7 @@ def manual_node(state: AgentState):
     context_parts = [item['text'] for item in context_data]
     context = "\n---\n".join(context_parts)
     
+    lang = state.get("language", "it")
     # 2. Generazione Strutturata
     prompt = f"""
     Com base no projeto R&D PLATFORM e nos seguintes dados técnicos:
@@ -153,7 +156,7 @@ def manual_node(state: AgentState):
     - Instruções de Operação/Implementação
     - Protocolos de Segurança
     
-    Idioma: {state['language']}
+    Idioma: {lang}
     """
     final_manual = call_gemma(prompt, "Você é um Escritor Técnico Sênior e Engenheiro de Sistemas da R&D PLATFORM.")
     

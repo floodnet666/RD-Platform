@@ -14,11 +14,11 @@ def test_insert_and_search():
     db = VectorDB(":memory:", dimension=3)
     
     # Inserir mock data
-    db.insert("texto 1", [1.0, 0.0, 0.0])
-    db.insert("texto 2", [0.0, 1.0, 0.0])
+    db.insert("texto 1", [1.0, 0.0, 0.0], page=1)
+    db.insert("texto 2", [0.0, 1.0, 0.0], page=2)
     
     # Buscar
     results = db.search([1.0, 0.0, 0.0], k=1)
     
     assert len(results) == 1
-    assert results[0] == "texto 1"
+    assert results[0]["text"] == "texto 1"

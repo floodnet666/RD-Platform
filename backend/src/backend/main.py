@@ -100,9 +100,21 @@ async def upload_asset(file: UploadFile = File(...)):
             return {"status": "success", "type": "csv", "message": f"Modelo IFC {file.filename} convertido em BOM de materiais."}
         
         elif any(filename.endswith(ext) for ext in [".c", ".py", ".h", ".cpp"]):
-            # Em produção, salvaríamos no repo de firmware. 
-            # Aqui simulamos a aceitação para o live demo.
-            return {"status": "success", "type": "code", "message": f"Código {file.filename} analisado e pronto para consultas."}
+            # Ingestão Real de Código-Fonte Unitário
+            db = VectorDB("R&D PLATFORM_rag.db")
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+            with open(temp_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+                blocks = parse_source_code(content, filename.split(".")[-1])
+                for block in blocks:
+                    emb = model.encode(block).tolist()
+                    db.insert(block, emb, 1, source=file.filename)
+            
+            # Persistência opcional no disco para listagem
+            manual_code_path = os.path.join("manuals", file.filename)
+            shutil.copy(temp_path, manual_code_path)
+            
+            return {"status": "success", "type": "code", "message": f"Código {file.filename} indexado e disponível para o Agente R&D."}
             
         return {"status": "unsupported", "message": "Formato não suportado para ingestão automática."}
     

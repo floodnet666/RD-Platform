@@ -8,6 +8,13 @@ def call_gemma(prompt: str, system_prompt: str = "") -> str:
     """
     # Detecção automática de ambiente Docker vs Host
     ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    if not ollama_host.startswith("http"):
+        ollama_host = f"http://{ollama_host}"
+    
+    # Se for apenas IP/Host, adiciona porta padrão do Ollama se não houver
+    if ":" not in ollama_host.replace("://", ""):
+        ollama_host = f"{ollama_host}:11434"
+
     url = f"{ollama_host}/api/generate"
     payload = {
         "model": "hf.co/mradermacher/gemma-4-E2B-it-uncensored-GGUF:Q8_0",

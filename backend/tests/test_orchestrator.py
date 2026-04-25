@@ -1,31 +1,43 @@
 import pytest
-from backend.orchestrator import build_graph, AgentState
+from unittest.mock import patch
+from backend.orchestrator import build_graph
 
-def test_graph_initialization():
-    graph = build_graph()
-    assert graph is not None
-    # Verifica que os nós fundamentais foram compilados
-    assert "router" in graph.nodes
+@pytest.fixture
+def graph():
+    return build_graph()
 
-def test_routing_to_rag():
-    graph = build_graph()
-    # "manual" na query deve forçar o roteamento para RAG
-    state = {"messages": ["Como calibrar o manual da incubadora?"], "intent": "", "context": ""}
+@patch("backend.orchestrator.call_gemma")
+def test_routing_to_rag(mock_gemma, graph):
+    # Mock do roteamento e da resposta do RAG
+    mock_gemma.side_effect = ["rag", "Resposta RAG Simulada"]
     
-    # Executa o workflow
+    state = {
+        "messages": ["Como calibrar o manual da incubadora?"],
+        "intent": "",
+        "context": "",
+        "language": "it"
+    }
+    
     result = graph.invoke(state)
     
-    # O router node deve ter setado a intenção
     assert result["intent"] == "rag"
-    # O rag_node deve ter injetado o contexto (mockado neste nível de teste)
-    assert result["context"] == "rag_results_mock"
+    assert "Resposta RAG Simulada" in result["context"]
 
-def test_routing_to_bom():
-    graph = build_graph()
-    # A query genérica de preço/peça deve rotear para o BOM
-    state = {"messages": ["Qual o preço dos parafusos?"], "intent": "", "context": ""}
+@patch("backend.orchestrator.call_gemma")
+@patch("backend.orchestrator.db.search")
+def test_routing_to_code(mock_search, mock_gemma, graph):
+    # Mock do roteamento e do contexto de código
+    mock_gemma.side_effect = ["code", "Análise de Código Simulada"]
+    mock_search.return_value = [{"text": "void main() {}", "page": 1}]
+    
+    state = {
+        "messages": ["Explique a função main"],
+        "intent": "",
+        "context": "",
+        "language": "it"
+    }
     
     result = graph.invoke(state)
     
-    assert result["intent"] == "bom"
-    assert result["context"] == "bom_results_mock"
+    assert result["intent"] == "code"
+    assert "Análise de Código Simulada" in result["context"]
