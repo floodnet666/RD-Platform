@@ -14,7 +14,7 @@ from backend.bom_engine import BOMEngine
 from sentence_transformers import SentenceTransformer
 
 # Inicialização do Servidor de Produção R&D PLATFORM
-app = FastAPI(title="OKO-Agent R&D Platform API")
+app = FastAPI(title="R&D PLATFORM API")
 
 # Configuração de CORS para o Dashboard R&D PLATFORM
 app.add_middleware(
