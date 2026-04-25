@@ -26,8 +26,8 @@ def router_node(state: AgentState):
     Analizza la richiesta dell'utente e classificala in UNA delle categorie seguenti:
     - 'BOM': Domande su conteggio pezzi, prezzi, materiali, estrazione dati da file IFC/CSV.
     - 'MANUAL': Richieste per generare, creare o scrivere documentazione tecnica per UTENTI FINALI.
-    - 'CODE': Domande su firmware, funzioni, logica di codice o richieste di DOCUMENTAZIONE di file sorgente (.py, .c).
-    - 'RAG': Domande generiche su sensori, calibrazione o istruzioni contenute nei manuali PDF.
+    - 'CODE': Analisi di file sorgente (.py, .c, .cpp), debug di firmware, spiegazione di algoritmi implementati nel codice o documentazione di API interne.
+    - 'RAG': Ricerca di informazioni in manuali, PDF, datasheet o documentazione tecnica generale (es. specifiche, calibrazioni, teoria scientifica, procedure operative).
     
     Utente: "{last_msg}"
     Rispondi SOLO con il nome della categoria.
@@ -134,7 +134,7 @@ def code_node(state: AgentState):
     print(f"[ORCHESTRATOR] 💻 Analisi Codice Sorgente...")
     query = state["messages"][-1]
     q_emb = embed_model.encode(query).tolist()
-    context_data = db.search(q_emb, k=5)
+    context_data = db.search_hybrid(query, q_emb, k=5)
     context = "\n---\n".join([f"[FILE: {item.get('page', 'N/A')}] {item['text']}" for item in context_data])
     
     prompt = f"Analise o código:\n{context}\n\nTarefa: {query}"
@@ -146,7 +146,7 @@ def manual_node(state: AgentState):
     print(f"[ORCHESTRATOR] 📖 Generazione Manuale...")
     query = state["messages"][-1]
     q_emb = embed_model.encode(query).tolist()
-    context_data = db.search(q_emb, k=10)
+    context_data = db.search_hybrid(query, q_emb, k=10)
     context = "\n---\n".join([item['text'] for item in context_data])
     
     prompt = f"Crie um Manual Técnico para: {query}\nBase de dados:\n{context}"

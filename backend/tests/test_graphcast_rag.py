@@ -7,6 +7,10 @@ def test_graphcast_hybrid_retrieval():
     Verifica se a Busca Híbrida (BM25 + Vetorial) consegue recuperar o termo exato '50 hPa'
     da Domanda 4, que costuma ser difícil para busca puramente vetorial.
     """
+    # Inserção de dados de teste (Self-Contained)
+    test_text = "GraphCast perde para HRES na estratosfera, especialmente em altitudes acima de 50 hPa devido ao peso."
+    db.insert(test_text, embed_model.encode(test_text).tolist(), page=1, source="test_doc.pdf", section="Test Section")
+    
     query = "In quale regione GraphCast perde contro HRES e cosa c'entra il peso a 50 hPa?"
     q_emb = embed_model.encode(query).tolist()
     
@@ -27,6 +31,10 @@ def test_query_rewriting_logic():
     Verifica se a lógica de HyDE/Rewriting funcionaria. 
     (Simulação simplificada do prompt usado no orchestrator)
     """
+    # Inserção de dados de teste (Self-Contained)
+    test_text = "ERA5 usa janelas assimétricas de 9 ore per 00z e 12z."
+    db.insert(test_text, embed_model.encode(test_text).tolist(), page=1, source="era5_doc.pdf", section="Data Assimilation")
+    
     query = "Perché 00z e 12z?"
     # Aqui testamos se o banco retorna algo útil para uma query tão curta usando a busca híbrida
     q_emb = embed_model.encode(query).tolist()

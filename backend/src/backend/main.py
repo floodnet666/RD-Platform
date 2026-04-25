@@ -33,13 +33,13 @@ def reset_session():
     """Garantisce una sessione pulita: elimina file manuali e resetta il DB."""
     print("[SYSTEM] Esecuzione Reset Sessione...")
     
-    # 1. Pulizia file fisici (Disabilitata per sviluppo persistente)
-    # if os.path.exists("manuals"):
-    #     for f in os.listdir("manuals"):
-    #         file_path = os.path.join("manuals", f)
-    #         try:
-    #             if os.path.isfile(file_path): os.unlink(file_path)
-    #         except Exception as e: print(f"Errore durante la pulizia di {f}: {e}")
+    # 1. Pulizia file fisici
+    if os.path.exists("manuals"):
+        for f in os.listdir("manuals"):
+            file_path = os.path.join("manuals", f)
+            try:
+                if os.path.isfile(file_path): os.unlink(file_path)
+            except Exception as e: print(f"Errore durante la pulizia di {f}: {e}")
             
     # 2. Reset del Database Vettoriale (Mantenendo la struttura) - Fix [MED-04]
     try:
@@ -53,8 +53,7 @@ def reset_session():
 
 @app.on_event("startup")
 async def startup_event():
-    # reset_session()
-    pass
+    reset_session()
 
 class ChatQuery(BaseModel):
     message: str

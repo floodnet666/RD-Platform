@@ -8,6 +8,14 @@
 ---
 
 ## 🇮🇹 Manifesto Tecnico (Pozzuoli HQ)
+## 🚀 R&D AI Engine (Pro-Grade RAG)
+O sistema utiliza uma arquitetura avançada de **Busca Híbrida** e **Orquestração Multi-Agente**:
+- **Busca Híbrida**: Vetores (Semântica) + FTS5 (Lexical/BM25).
+- **Debate Multi-Agente**: Construtor, Crítico e Sintetizador via LangGraph.
+- **Ingestão Estruturada**: Markdown-First com detecção de seções e limpeza de headers.
+
+Para detalhes técnicos profundos, veja o [RAG Technical Guide](RAG_TECHNICAL_GUIDE.md).
+
 La piattaforma R&D PLATFORM è un ecosistema di **Ingegneria Deterministica** progettato per eliminare il divario tra dati grezzi (CAD/BIM) e documentazione tecnica. In un mondo dominato da soluzioni cloud generiche, R&D PLATFORM opera in isolamento totale, garantendo che la proprietà intellettuale non lasci mai il perimetro aziendale.
 
 ### Core Capabilities:
