@@ -18,6 +18,9 @@ manuals/*.md
 okolab_rag.db
 R&D PLATFORM_rag.db
 backend/R&D PLATFORM_rag.db
+backend/data/
+*.db
+*.db-journal
 *.log
 
 # Docker

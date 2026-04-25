@@ -1,29 +1,35 @@
-# Piano Operativo di Ingegneria: R&D PLATFORM AI Platform
+# Task Plan - Pro-Grade RAG Implementation
 
-## 🎯 Obiettivi Strategici
-Costruire una piattaforma IA autonoma per l'automazione della documentazione e l'analisi deterministica dei dati CAD/BIM per R&D PLATFORM.
+## Goal
+Transform the basic RAG into a robust Hybrid RAG system (Vector + Lexical) with Query Rewriting (HyDE) and optimized chunking.
 
-## 🧱 Sprint di Sviluppo
+## Phases
 
-### Fase 1: Fondamenta e RAG
-- [x] Setup Backend FastAPI + LangGraph.
-- [x] Implementazione VectorDB locale (SQLite-Vec).
-- [x] Sistema de Ingestão de Ativos (PDF/IFC).
+### Phase 1: Database Upgrade (Hybrid Search)
+- [ ] Update `VectorDB` to initialize an FTS5 table alongside the vector table.
+- [ ] Implement `insert_hybrid` to populate both FTS5 and Vector indices.
+- [ ] Implement `search_hybrid` using Reciprocal Rank Fusion (RRF).
 
-### Fase 2: Motore Deterministico (BOM)
-- [x] Integrazione IfcOpenShell per estrazione metadati.
-- [x] Conversione IFC -> Polars SQL Engine.
-- [x] Agente di Routing Semantico (Router Node).
+### Phase 2: Orchestration Upgrade (HyDE)
+- [ ] Add `query_rewriter_node` in `orchestrator.py` to generate expanded queries/hypothetical answers.
+- [ ] Update `rag_node` to use the rewritten query for hybrid retrieval.
 
-### Fase 3: UX e Consolidamento
-- [x] Frontend React con layout "High Fidelity".
-- [x] Protocollo "Tabula Rasa" per la pulizia delle sessioni.
-- [x] Traduzione completa della piattaforma in Italiano Industriale.
+### Phase 3: Chunking Strategy Optimization
+- [ ] Update `chunker.py` to support `overlap` (e.g., 10-20%) to prevent loss of context at boundaries.
+- [ ] Implement Header-aware chunking for Markdown files.
 
-## 🛡️ Criteri di Accettazione
-- [x] Superamento dei test E2E (TDD Suite).
-- [x] Latenza di inferenza locale accettabile (<2s per il routing).
-- [x] Zero fughe di dati (Zero-Cloud Compliance).
+### Phase 4: Validation & Benchmarking
+- [ ] Use the GraphCast "trick questions" as a benchmark.
+- [ ] Compare "Pure Vector" vs "Hybrid" performance.
 
----
-**Lead Engineer: Thiago C. Mendonça**
+## Decisions
+| Decision | Rationale |
+|----------|-----------|
+| SQLite FTS5 | Native, low overhead, perfectly compatible with the existing SQLite-vec stack. |
+| RRF (Reciprocal Rank Fusion) | Robust way to combine lexical and semantic ranks without requiring normalized scores. |
+| HyDE | Helps when user queries are short or use different terminology than the documentation. |
+
+## Errors Encountered
+| Error | Attempt | Resolution |
+|-------|---------|------------|
+| | | |

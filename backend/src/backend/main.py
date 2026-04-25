@@ -12,6 +12,7 @@ from backend.code_parser import parse_source_code
 from backend.ifc_parser import IFCParser
 from backend.bom_engine import BOMEngine
 from sentence_transformers import SentenceTransformer
+from backend.database import db, embed_model as model
 
 # Inicialização do Servidor de Produção R&D PLATFORM
 app = FastAPI(title="R&D PLATFORM API")
@@ -21,34 +22,29 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Inicialização do Orquestrador LangGraph (Singleton)
 graph = build_graph()
-model_path = os.getenv("EMBEDDING_MODEL_PATH", "all-MiniLM-L6-v2")
-model = SentenceTransformer(model_path)
-db = VectorDB("R&D PLATFORM_rag.db")
 
 def reset_session():
     """Garantisce una sessione pulita: elimina file manuali e resetta il DB."""
     print("[SYSTEM] Esecuzione Reset Sessione...")
     
-    # 1. Pulizia file fisici
-    if os.path.exists("manuals"):
-        for f in os.listdir("manuals"):
-            file_path = os.path.join("manuals", f)
-            try:
-                if os.path.isfile(file_path): os.unlink(file_path)
-            except Exception as e: print(f"Errore durante la pulizia di {f}: {e}")
+    # 1. Pulizia file fisici (Disabilitata per sviluppo persistente)
+    # if os.path.exists("manuals"):
+    #     for f in os.listdir("manuals"):
+    #         file_path = os.path.join("manuals", f)
+    #         try:
+    #             if os.path.isfile(file_path): os.unlink(file_path)
+    #         except Exception as e: print(f"Errore durante la pulizia di {f}: {e}")
             
-    # 2. Reset del Database Vettoriale (Mantenendo la struttura)
-    db = VectorDB("R&D PLATFORM_rag.db")
+    # 2. Reset del Database Vettoriale (Mantenendo la struttura) - Fix [MED-04]
     try:
         db.conn.execute("DELETE FROM chunks")
         db.conn.execute("DELETE FROM chunks_vec")
-        db.conn.execute("VACUUM")
         db.conn.commit()
     except Exception as e:
         print(f"Avviso Reset DB: {e} - Re-inizializzazione...")
@@ -57,7 +53,8 @@ def reset_session():
 
 @app.on_event("startup")
 async def startup_event():
-    reset_session()
+    # reset_session()
+    pass
 
 class ChatQuery(BaseModel):
     message: str
@@ -80,16 +77,14 @@ async def upload_asset(file: UploadFile = File(...)):
     
     try:
         if filename.endswith(".pdf"):
-            # Processamento RAG Dinâmico
-            model_path = os.getenv("EMBEDDING_MODEL_PATH", "all-MiniLM-L6-v2")
-            model = SentenceTransformer(model_path)
-            db = VectorDB("R&D PLATFORM_rag.db")
-            pages = extract_text_from_pdf(temp_path)
+            # Ingestão Estruturada (Markdown-First) - Fix [STRUCT-INGEST]
+            from backend.pdf_extractor import extract_text_from_pdf_structured
+            pages = extract_text_from_pdf_structured(temp_path)
             for p in pages:
                 chunks = chunk_text(p["text"])
                 for c in chunks:
                     embedding = model.encode(c).tolist()
-                    db.insert(c, embedding, p["page"], source=file.filename)
+                    db.insert(c, embedding, p["page"], source=file.filename, section=p["section"])
             return {"status": "success", "type": "pdf", "message": f"Manual {file.filename} indexado."}
         
         elif filename.endswith(".ifc"):
@@ -102,9 +97,7 @@ async def upload_asset(file: UploadFile = File(...)):
             return {"status": "success", "type": "csv", "message": f"Modelo IFC {file.filename} convertido em BOM de materiais."}
         
         elif any(filename.endswith(ext) for ext in [".c", ".py", ".h", ".cpp"]):
-            # Ingestão Real de Código-Fonte Unitário
-            db = VectorDB("R&D PLATFORM_rag.db")
-            model = SentenceTransformer('all-MiniLM-L6-v2')
+            # Ingestão Real de Código-Fonte Unitário - Fix [HIGH-01]: Usar singletons globais
             with open(temp_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
                 blocks = parse_source_code(content, filename.split(".")[-1])
@@ -158,11 +151,8 @@ async def clone_repository(req: RepoRequest):
         shutil.rmtree(target_dir)
         
     try:
+        # Fix [HIGH-01]: Remover recarga de modelo e DB redundante
         git.Repo.clone_from(auth_url, target_dir, depth=1)
-        
-        db = VectorDB("R&D PLATFORM_rag.db")
-        model_path = os.getenv("EMBEDDING_MODEL_PATH", "all-MiniLM-L6-v2")
-        model = SentenceTransformer(model_path)
         
         indexed_count = 0
         for root, _, files in os.walk(target_dir):
@@ -180,9 +170,10 @@ async def clone_repository(req: RepoRequest):
         return {"status": "success", "message": f"Repositório {repo_name} indexado. {indexed_count} blocos processados."}
     
     except Exception as e:
-        error_msg = str(e)
+        # Fix [CRIT-01]: Sanitizar token em mensagens de erro
+        error_msg = str(e).replace(req.token or "", "***") if req.token else str(e)
         if "Authentication failed" in error_msg or "could not read Username" in error_msg or "403" in error_msg:
-            return {"status": "need_token", "message": "Autenticazione fallita. Il repository sembra essere privato. Per favore, fornisci un Personal Access Token (PAT)."}
+            return {"status": "need_token", "message": "Autenticazione fallita. Il repository parece ser privado. Per favore, fornisci un Personal Access Token (PAT)."}
         return {"status": "error", "message": error_msg}
 
     finally:
@@ -194,7 +185,7 @@ async def delete_asset(filename: str):
     """
     Remove um ativo e todos os seus vetores do banco de dados.
     """
-    db = VectorDB("R&D PLATFORM_rag.db")
+    # Fix [MED-04]: Usar singleton global
     # Deleta da tabela de metadados e a tabela vetorial limpa via rowid (se configurado trigger)
     # No sqlite-vec simples, deletamos os chunks e os vetores órfãos
     try:

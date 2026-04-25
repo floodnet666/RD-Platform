@@ -1,18 +1,16 @@
 from typing import TypedDict, Annotated
 import operator
 import os
+import re
 from langgraph.graph import StateGraph, END
 
 from backend.llm_client import call_gemma
+from backend.database import db, embed_model
 from backend.vector_db import VectorDB
 from backend.bom_engine import BOMEngine
 from backend.code_parser import parse_source_code
-from sentence_transformers import SentenceTransformer
-
-# Singleton instances para evitar overhead de recarregamento
-model_path = os.getenv("EMBEDDING_MODEL_PATH", "all-MiniLM-L6-v2")
-embed_model = SentenceTransformer(model_path)
-db = VectorDB("R&D PLATFORM_rag.db")
+# Decoupled Prompts
+from backend.prompts.rag_prompts import CONSTRUCTOR_PROMPT, CRITIC_PROMPT, SYNTHESIZER_PROMPT
 
 class AgentState(TypedDict):
     messages: Annotated[list[str], operator.add]
@@ -45,150 +43,151 @@ def router_node(state: AgentState):
     print(f"\n[ORCHESTRATOR] 🧠 Intento Rilevato: {final_intent.upper()}")
     return {"intent": final_intent}
 
-def rag_node(state: AgentState):
-    """Busca vetorial real no sqlite-vec e síntese via Gemma-4 com Citações."""
-    print(f"[ORCHESTRATOR] 🔍 Executing RAG Node...")
+def query_rewriter_node(state: AgentState):
+    """
+    Query Rewriting / HyDE: Espande la query dell'utente per migliorare il retrieval.
+    """
+    if state.get("intent") != "rag":
+        return state
+
     query = state["messages"][-1]
-    q_emb = embed_model.encode(query).tolist()
-    context_data = db.search(q_emb, k=3)
+    prompt = f"""
+    Sei un esperto di sistemi R&D. Riscrevi la domanda seguente per ottimizzare la ricerca semantica e lessicale.
+    Aggiungi termini tecnici correlati, sinonimi o una brevissima risposta ipotetica (HyDE).
+    
+    Domanda: "{query}"
+    
+    Risposta: Fornisci SOLO la query espansa, senza commenti.
+    """
+    expanded_query = call_gemma(prompt, "Esperto di Information Retrieval.")
+    print(f"[ORCHESTRATOR] 📝 Query Espansa: {expanded_query.strip()}")
+    return {"messages": [expanded_query.strip()]}
+
+def retriever_node(state: AgentState):
+    """Retriever Híbrido: Recupera context usando busca vetorial e lexical."""
+    print(f"[ORCHESTRATOR] 🔍 Recuperando Contexto Híbrido...")
+    retrieval_query = state["messages"][-1]
+    q_emb = embed_model.encode(retrieval_query).tolist()
+    context_data = db.search_hybrid(retrieval_query, q_emb, k=5)
     
     context_parts = []
     for item in context_data:
-        context_parts.append(f"[FONTE: Página {item['page']}] {item['text']}")
+        section = item.get("section", "N/A")
+        context_parts.append(f"[FONTE: Página {item['page']} | Sezione: {section}] {item['text']}")
     
     context = "\n---\n".join(context_parts)
+    return {"context": context}
+
+def constructor_node(state: AgentState):
+    """Agente Construtor: Formula a resposta inicial."""
+    print(f"[ORCHESTRATOR] 🛠️ Agente Construtor em ação...")
+    query = state["messages"][0]
+    prompt = CONSTRUCTOR_PROMPT.format(context=state["context"], query=query)
+    response = call_gemma(prompt, "Ingegnere Construttore R&D.")
+    return {"messages": [response]}
+
+def critic_node(state: AgentState):
+    """Agente Crítico: Verifica alucinações e precisão."""
+    print(f"[ORCHESTRATOR] ⚖️ Agente Crítico revisando...")
+    answer = state["messages"][-1]
+    prompt = CRITIC_PROMPT.format(answer=answer, context=state["context"])
+    feedback = call_gemma(prompt, "Revisore Critico R&D.")
+    return {"messages": [feedback]}
+
+def synthesizer_node(state: AgentState):
+    """Agente Sintetizador: Consolida a resposta final."""
+    print(f"[ORCHESTRATOR] 🎤 Agente Sintetizador finalizando...")
+    query = state["messages"][0]
+    critic_feedback = state["messages"][-1]
+    # No LangGraph com operator.add, precisamos ter cuidado com a indexação
+    # Mas aqui simplificamos retornando a resposta final
     
-    lang = state.get("language", "it")
-    prompt = f"Contexto Técnico R&D PLATFORM:\n{context}\n\nPergunta: {query}\n\nInstrução: Responda obrigatoriamente no idioma [{lang.upper()}]. Seja técnico e cite a [Página X]."
-    answer = call_gemma(prompt, f"Você é um assistente de engenharia da R&D PLATFORM. Responda em {lang}.")
-    return {"context": answer}
+    prompt = SYNTHESIZER_PROMPT.format(query=query, context=state["context"], answer=critic_feedback)
+    final_response = call_gemma(prompt, "Sintetizzatore R&D.")
+    return {"messages": [final_response]}
 
 def bom_node(state: AgentState):
     """Execução determinística Polars com arquivo CSV dinâmico."""
     print(f"[ORCHESTRATOR] 📊 Executing BOM/IFC Engine Node...")
     manual_dir = "manuals"
-    if not os.path.exists(manual_dir):
-        os.makedirs(manual_dir)
-        
+    if not os.path.exists(manual_dir): os.makedirs(manual_dir)
+    
     files = [os.path.join(manual_dir, f) for f in os.listdir(manual_dir) if f.endswith(".csv")]
-    if not files:
-        return {"context": "Erro: Nenhuma base de dados BOM encontrada. Carregue um arquivo CSV ou IFC primeiro."}
+    if not files: return {"context": "Erro: Nenhuma base de dados BOM encontrada."}
     
     latest_bom_path = max(files, key=os.path.getmtime)
-    print(f"[BOM_ENGINE] Using file: {latest_bom_path}")
     engine = BOMEngine(latest_bom_path)
-    
     query = state["messages"][-1]
-    sql_prompt = f"""
-    Convert to SQL (table 'bom'): {query}
-    Table Schema:
-    - part_number (string)
-    - description (string)
-    - quantity (integer)
-    - unit_price (float)
-    - category (string, example: 'IfcWall', 'IfcWindow', 'IfcSlab')
     
-    Use simple ANSI SQL. Do NOT use subqueries with '='. Use 'IN' for subqueries. 
-    Return ONLY the SQL string.
-    """
-    sql_query = call_gemma(sql_prompt, "You are a Natural Language to Polars SQL translator. Be precise about column names.")
+    sql_prompt = f"Convert to SQL (table 'bom'): {query}\nSchema: part_number, description, quantity, unit_price, category\nReturn ONLY SQL."
+    sql_query = call_gemma(sql_prompt, "NL to SQL translator.")
+    sql_clean = sql_query.replace("```sql", "").replace("```", "").strip()
     
-    sql_query = sql_query.replace("```sql", "").replace("```", "").strip()
-    if "SELECT" in sql_query.upper() and "= (" in sql_query:
-        sql_query = sql_query.replace("= (", "IN (")
-    
-    print(f"[SQL_DEBUG] Executing: {sql_query}")
     try:
-        results = engine.execute_sql(sql_query)
-        context = f"Analisi deterministica (File: {os.path.basename(latest_bom_path)}):\n{results}"
+        results = engine.execute_sql(sql_clean)
+        return {"context": f"Analisi BOM:\n{results}"}
     except Exception as e:
-        print(f"[BOM_ERROR] {str(e)}")
-        return {"context": f"Erro no processamento da BOM: {str(e)}"}
-    
-    return {"context": context}
+        return {"context": f"Errore BOM: {str(e)}"}
 
 def code_node(state: AgentState):
-    """Nó de análise de firmware/código fonte real (RAG-based)."""
-    print(f"[ORCHESTRATOR] 💻 Analisi Codice Sorgente Reale...")
+    """Análise de código real."""
+    print(f"[ORCHESTRATOR] 💻 Analisi Codice Sorgente...")
     query = state["messages"][-1]
-    
-    # 1. Recupera blocchi di codice rilevanti dal VectorDB
     q_emb = embed_model.encode(query).tolist()
-    # Aumentiamo k per avere più contesto del codice
-    context_data = db.search(q_emb, k=5) 
+    context_data = db.search(q_emb, k=5)
+    context = "\n---\n".join([f"[FILE: {item.get('page', 'N/A')}] {item['text']}" for item in context_data])
     
-    if not context_data:
-        return {"context": "Errore: Nessun frammento di codice trovato nel database. Ingerisci un repository prima."}
-
-    context_parts = []
-    for item in context_data:
-        # Filtriamo per assicurarci che siano frammenti di codice (solitamente hanno estensioni .c, .py, .h)
-        context_parts.append(f"[FILE: {item.get('page', 'Unknown')}] {item['text']}")
-    
-    context = "\n---\n".join(context_parts)
-    
-    lang = state.get("language", "it")
-    prompt = f"Analise o seguinte trecho de firmware/código da R&D PLATFORM:\n{context}\n\nTarefa: {query}\n\nInstrução: Baseie sua resposta estritamente no código fornecido. Responda no idioma: {lang}"
-    answer = call_gemma(prompt, "Você é um Engenheiro de Firmware Sênior da R&D PLATFORM, especialista em análise estática e lógica de controle.")
-    return {"context": answer}
+    prompt = f"Analise o código:\n{context}\n\nTarefa: {query}"
+    answer = call_gemma(prompt, "Engenheiro de Firmware Sênior.")
+    return {"messages": [answer]}
 
 def manual_node(state: AgentState):
-    """Geração de manuais técnicos reais baseada em dados indexados."""
-    print(f"[ORCHESTRATOR] 📖 Generazione Manuale Tecnico Reale...")
+    """Geração de manuais técnicos."""
+    print(f"[ORCHESTRATOR] 📖 Generazione Manuale...")
     query = state["messages"][-1]
-    
-    # 1. Recupero contesto per il manuale
     q_emb = embed_model.encode(query).tolist()
-    context_data = db.search(q_emb, k=10) # Maggiore contesto per documentazione estesa
+    context_data = db.search(q_emb, k=10)
+    context = "\n---\n".join([item['text'] for item in context_data])
     
-    context_parts = [item['text'] for item in context_data]
-    context = "\n---\n".join(context_parts)
-    
-    lang = state.get("language", "it")
-    # 2. Generazione Strutturata
-    prompt = f"""
-    Com base no projeto R&D PLATFORM e nos seguintes dados técnicos:
-    {context}
-    
-    Crie um Manual Técnico estruturado para: {query}
-    Inclua:
-    - Introdução
-    - Arquitetura de Sistema
-    - Instruções de Operação/Implementação
-    - Protocolos de Segurança
-    
-    Idioma: {lang}
-    """
-    final_manual = call_gemma(prompt, "Você é um Escritor Técnico Sênior e Engenheiro de Sistemas da R&D PLATFORM.")
-    
-    # Persistência no disco para o usuário baixar
-    manual_filename = f"manual_gerado_{query.replace(' ', '_')[:20]}.md"
-    manual_path = os.path.join("manuals", manual_filename)
-    with open(manual_path, "w", encoding="utf-8") as f:
-        f.write(final_manual)
-    
-    print(f"[MANUAL_GEN] Real manual saved to {manual_path}")
-    return {"context": f"Manual técnico gerado com sucesso baseado na base de conhecimento real.\n\nArquivo salvo em: {manual_path}\n\n{final_manual}"}
-
-def route_edge(state: AgentState):
-    if state["intent"] == "manual":
-        return "manual_node"
-    if state["intent"] == "code":
-        return "code_node"
-    return "rag_node" if state["intent"] == "rag" else "bom_node"
+    prompt = f"Crie um Manual Técnico para: {query}\nBase de dados:\n{context}"
+    final_manual = call_gemma(prompt, "Escritor Técnico Sênior.")
+    return {"messages": [final_manual]}
 
 def build_graph():
     workflow = StateGraph(AgentState)
     workflow.add_node("router", router_node)
-    workflow.add_node("rag_node", rag_node)
-    workflow.add_node("bom_node", bom_node)
-    workflow.add_node("code_node", code_node)
-    workflow.add_node("manual_node", manual_node)
+    workflow.add_node("query_rewriter", query_rewriter_node)
+    workflow.add_node("retriever", retriever_node)
+    workflow.add_node("constructor", constructor_node)
+    workflow.add_node("critic", critic_node)
+    workflow.add_node("synthesizer", synthesizer_node)
     
+    workflow.add_node("bom", bom_node)
+    workflow.add_node("manual", manual_node)
+    workflow.add_node("code", code_node)
+
     workflow.set_entry_point("router")
-    workflow.add_conditional_edges("router", route_edge)
-    workflow.add_edge("rag_node", END)
-    workflow.add_edge("bom_node", END)
-    workflow.add_edge("code_node", END)
-    workflow.add_edge("manual_node", END)
+    
+    workflow.add_conditional_edges(
+        "router",
+        lambda x: x["intent"],
+        {
+            "rag": "query_rewriter",
+            "bom": "bom",
+            "manual": "manual",
+            "code": "code"
+        }
+    )
+
+    # Fluxo de Debate RAG
+    workflow.add_edge("query_rewriter", "retriever")
+    workflow.add_edge("retriever", "constructor")
+    workflow.add_edge("constructor", "critic")
+    workflow.add_edge("critic", "synthesizer")
+    workflow.add_edge("synthesizer", END)
+    
+    workflow.add_edge("bom", END)
+    workflow.add_edge("manual", END)
+    workflow.add_edge("code", END)
+    
     return workflow.compile()

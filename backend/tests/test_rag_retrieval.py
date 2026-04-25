@@ -23,13 +23,13 @@ def test_lid35_retrieval_integrity():
     results = db.search(q_emb, k=5)
     
     # Valida se o termo LID-35 aparece em pelo menos um dos chunks recuperados
-    found = any("LID-35" in chunk.upper() or "LID35" in chunk.upper() for chunk in results)
+    found = any("LID-35" in item["text"].upper() or "LID35" in item["text"].upper() for item in results)
     
     if not found:
         # Debug: Mostrar o que foi encontrado para análise de falha
         print("\nCHUNKS ENCONTRADOS (NÃO CONTÉM LID-35):")
-        for i, c in enumerate(results):
-            print(f"[{i}]: {c[:100]}...")
+        for i, item in enumerate(results):
+            print(f"[{i}]: {item['text'][:100]}...")
             
     assert found, "FALHA: O motor de busca não recuperou informações sobre o SENSOR LID-35."
 

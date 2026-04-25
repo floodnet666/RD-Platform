@@ -1,10 +1,10 @@
 import sqlite3
 import os
 
-db_path = "okolab_rag.db"
+db_path = "R&D PLATFORM_rag.db"
 
 if not os.path.exists(db_path):
-    print(f"ERRO: O arquivo {db_path} NÃO EXISTE na pasta backend.")
+    print(f"ERRO: O arquivo {db_path} NÃO EXISTE.")
 else:
     try:
         conn = sqlite3.connect(db_path)
@@ -15,13 +15,13 @@ else:
         print(f"Tabelas encontradas: {tables}")
         
         # Conta documentos
-        cursor.execute("SELECT count(*) FROM vec_documents")
+        cursor.execute("SELECT count(*) FROM chunks")
         count = cursor.fetchone()[0]
-        print(f"Total de Chunks no banco de vetores: {count}")
+        print(f"Total de Chunks no banco: {count}")
         
         if count > 0:
             # Mostra o conteúdo de um chunk para validar a extração
-            cursor.execute("SELECT content FROM vec_documents LIMIT 1")
+            cursor.execute("SELECT text_content FROM chunks LIMIT 1")
             content = cursor.fetchone()[0]
             print(f"Amostra de conteúdo do primeiro chunk:\n{content[:200]}...")
             

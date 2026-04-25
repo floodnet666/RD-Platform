@@ -25,7 +25,7 @@ RUN uv run python download_models.py
 # O código será montado via Volume no Docker Compose para permitir Hot Reload
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/src"
-ENV SENTENCE_TRANSFORMERS_HOME="/app/models"
+ENV SENTENCE_TRANSFORMERS_HOME="/models"
 
 EXPOSE 8000
 
