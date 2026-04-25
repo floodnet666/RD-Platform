@@ -16,6 +16,8 @@ manuals/*.ifc
 manuals/*.csv
 manuals/*.md
 okolab_rag.db
+R&D PLATFORM_rag.db
+backend/R&D PLATFORM_rag.db
 *.log
 
 # Docker
