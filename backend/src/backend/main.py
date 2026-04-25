@@ -165,7 +165,11 @@ async def clone_repository(req: RepoRequest):
         return {"status": "success", "message": f"Reposit??rio {repo_name} indexado. {indexed_count} blocos processados."}
     
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        error_msg = str(e)
+        if "Authentication failed" in error_msg or "could not read Username" in error_msg or "403" in error_msg:
+            return {"status": "need_token", "message": "Autenticazione fallita. Il repository sembra essere privato. Per favore, fornisci un Personal Access Token (PAT)."}
+        return {"status": "error", "message": error_msg}
+
     finally:
         if os.path.exists(target_dir):
             shutil.rmtree(target_dir)

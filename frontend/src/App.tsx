@@ -35,6 +35,7 @@ export default function App() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [assets, setAssets] = useState<{name: string, type: string}[]>([]);
+  const [pendingRepoUrl, setPendingRepoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     // Sincronização de Ativos com o Disco Real
@@ -67,6 +68,32 @@ export default function App() {
     setInput('');
     setLoading(true);
 
+    // Lógica de Token para Repos Privados
+    if (pendingRepoUrl) {
+      addLog('system', 'TOKEN RECEIVED. RETRYING CLONE WITH AUTH...');
+      try {
+        const response = await fetch('http://localhost:8000/clone', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ repo_url: pendingRepoUrl, token: userMessage }),
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+          addLog('result', data.message);
+          setMessages(prev => [...prev, { role: 'agent', content: `✅ Sucesso! Repo privado indexado: ${data.message}` }]);
+          setPendingRepoUrl(null);
+        } else {
+          addLog('system', 'AUTH FAILED AGAIN.');
+          setMessages(prev => [...prev, { role: 'agent', content: '❌ Falha na autenticação. O token é válido?' }]);
+        }
+      } catch (err) {
+        addLog('system', 'GITHUB CLONE FAILED.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     // Detecção de Repositório GitHub
     if (userMessage.includes('github.com/') && userMessage.includes('http')) {
       addLog('system', 'GITHUB REPO DETECTED. INITIALIZING CLONE ENGINE...');
@@ -79,6 +106,15 @@ export default function App() {
             body: JSON.stringify({ repo_url: repoUrl }),
           });
           const data = await response.json();
+          
+          if (data.status === 'need_token') {
+            addLog('system', 'PRIVATE REPO DETECTED.');
+            setPendingRepoUrl(repoUrl);
+            setMessages(prev => [...prev, { role: 'agent', content: '🔒 Este repositório parece ser privado. Por favor, cole seu Personal Access Token (PAT) abaixo para que eu possa acessá-lo.' }]);
+            setLoading(false);
+            return;
+          }
+
           addLog('result', data.message);
           setMessages(prev => [...prev, { role: 'agent', content: `✅ Repo analisado: ${data.message}. O que deseja saber sobre este código?` }]);
           setLoading(false);
