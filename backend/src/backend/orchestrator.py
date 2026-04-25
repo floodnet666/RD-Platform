@@ -63,68 +63,95 @@ def query_rewriter_node(state: AgentState):
     print(f"[ORCHESTRATOR] 📝 Query Espansa: {expanded_query.strip()}")
     return {"messages": [expanded_query.strip()]}
 
+def _extract_numeric_anchors_from_query(query: str) -> list[str]:
+    """Extrai sequências numéricas específicas para ancoragem de contexto."""
+    return re.findall(r'\b\d+(?:[.,]\d+)?\b', query)
+
+
 def retriever_node(state: AgentState):
     """
-    Retriever Híbrido com Context Isolation.
-    [RIGOR]: Valida âncoras semânticas para evitar contaminação entre seções distintas.
+    Retriever Híbrido com Isolamento de Contexto (DIRECTIVA 3).
+    Filtra chunks que não contêm âncoras numéricas exactas da query.
+    Fallback inteligente: se todos os chunks forem descartados, retorna os top-2 sem filtro.
     """
-    print(f"[ORCHESTRATOR] 🔍 Recuperando Contexto Híbrido com Rigor Semântico...")
+    print(f"[ORCHESTRATOR] 🔍 Recuperando Contexto com Ancoragem de Metadados...")
     retrieval_query = state["messages"][-1]
     q_emb = embed_model.encode(retrieval_query).tolist()
-    context_data = db.search_hybrid(retrieval_query, q_emb, k=5)
-    
-    # Extrair IDs/Variáveis/Números da query para validação de âncoras
-    anchors = re.findall(r'\b[A-Z0-9_\-]{2,}\b|\d+(?:\.\d+)?', retrieval_query)
-    
-    context_parts = []
+    context_data = db.search_hybrid(retrieval_query, q_emb, k=7)
+
+    # Âncoras numéricas exactas da query (ex: '9', '3021', '100')
+    numeric_anchors = _extract_numeric_anchors_from_query(retrieval_query)
+    # Âncoras alfanuméricas/siglas (ex: 'PINN', 'MSE', 'N_u')
+    alpha_anchors = re.findall(r'\b[A-Z]{2,}\b|N_[a-zA-Z]+', retrieval_query)
+    all_anchors = numeric_anchors + alpha_anchors
+
+    validated = []
+    discarded = []
     for item in context_data:
         text = item['text']
         section = item.get("section", "N/A")
-        
-        # Validação de Âncoras: Se a query tem identificadores específicos, 
-        # eles devem estar presentes no chunk para serem considerados válidos.
-        if anchors:
-            found_anchors = [a for a in anchors if a in text]
-            # Se a query cita um Modelo A, mas o chunk é do Modelo B, descartamos se não houver coabitação
-            if not found_anchors and len(anchors) > 1:
-                print(f"[ORCHESTRATOR] ⚠️ Descartando chunk da Seção '{section}' por falta de âncoras.")
-                continue
-                
-        context_parts.append(f"[FONTE: Página {item['page']} | Seção: {section}] {text}")
-    
-    if not context_parts:
-        # Fallback: se o rigor for excessivo, pegamos o melhor resultado sem filtro para não travar
-        context_parts = [f"[FONTE: Página {item['page']} | Seção: {item.get('section', 'N/A')}] {item['text']}" for item in context_data[:1]]
 
-    context = "\n---\n".join(context_parts)
+        if all_anchors:
+            matched = [a for a in all_anchors if a in text]
+            if not matched:
+                print(f"[ORCHESTRATOR] ⚠️ Chunk descartado (Seção: '{section}') — sem âncoras: {all_anchors}")
+                discarded.append(item)
+                continue
+
+        validated.append(f"[Pág.{item['page']} | Secção: {section}] {text}")
+
+    # Fallback inteligente: evita contexto vazio que bloquearia a síntese
+    if not validated:
+        print(f"[ORCHESTRATOR] ⚠️ Fallback activado — usando top-2 sem filtro de âncoras.")
+        validated = [f"[Pág.{item['page']} | Secção: {item.get('section', 'N/A')}] {item['text']}" for item in context_data[:2]]
+
+    context = "\n---\n".join(validated)
     return {"context": context}
 
 def constructor_node(state: AgentState):
-    """Agente Construtor: Formula a resposta inicial."""
+    """
+    Agente Construtor (DIRECTIVA 3).
+    O system prompt reforça a Diretiva de Fronteira Rígida: o LLM recebe instrução
+    explícita para validar a consistência sujeito/parâmetro antes de usar um fragmento.
+    """
     print(f"[ORCHESTRATOR] 🛠️ Agente Construtor em ação...")
     query = state["messages"][0]
     prompt = CONSTRUCTOR_PROMPT.format(context=state["context"], query=query)
-    response = call_gemma(prompt, "Ingegnere Construttore R&D.")
+    system = (
+        "És um motor de recuperação de informação técnica. "
+        "Respondes apenas com dados presentes no CONTEXTO fornecido. "
+        "PROIBIDO: inferir, extrapolar, ou cruzar dados de secções distintas sem ligação explícita no documento. "
+        "Cada afirmação requer referência [Pág.X | Secção: Y]."
+    )
+    response = call_gemma(prompt, system)
     return {"messages": [response]}
 
 def critic_node(state: AgentState):
-    """Agente Crítico: Verifica alucinações e precisão."""
+    """Agente Crítico: Verifica consistência, alucinações e persona leakage."""
     print(f"[ORCHESTRATOR] ⚖️ Agente Crítico revisando...")
     answer = state["messages"][-1]
     prompt = CRITIC_PROMPT.format(answer=answer, context=state["context"])
-    feedback = call_gemma(prompt, "Revisore Critico R&D.")
+    system = (
+        "És um auditor de precisão factual. "
+        "Verifica se cada afirmação da resposta tem suporte no contexto e se os parâmetros numéricos coincidem exactamente. "
+        "Sinaliza qualquer cruzamento indevido de secções distintas."
+    )
+    feedback = call_gemma(prompt, system)
     return {"messages": [feedback]}
 
 def synthesizer_node(state: AgentState):
-    """Agente Sintetizador: Consolida a resposta final."""
+    """Agente Sintetizador: Consolida a resposta final com densidade máxima e zero persona."""
     print(f"[ORCHESTRATOR] 🎤 Agente Sintetizador finalizando...")
     query = state["messages"][0]
     critic_feedback = state["messages"][-1]
-    # No LangGraph com operator.add, precisamos ter cuidado com a indexação
-    # Mas aqui simplificamos retornando a resposta final
-    
     prompt = SYNTHESIZER_PROMPT.format(query=query, context=state["context"], answer=critic_feedback)
-    final_response = call_gemma(prompt, "Sintetizzatore R&D.")
+    system = (
+        "Consolida a resposta aplicando as correcções do crítico. "
+        "Inicia DIRECTAMENTE com os dados técnicos. "
+        "Zero introduções. Zero autoidentificação. "
+        "Cada facto com referência inline [Pág.X | Secção: Y]."
+    )
+    final_response = call_gemma(prompt, system)
     return {"messages": [final_response]}
 
 def bom_node(state: AgentState):

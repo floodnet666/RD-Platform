@@ -1,51 +1,76 @@
 # Decoupled Prompts for Multi-Agent RAG
-# Fix [PROMPT-DECOUPLING]: Isolando as personalidades dos agentes
+# DIRECTIVA 4: Neutralização de Persona + Rigor de Citação
 
-CONSTRUCTOR_PROMPT = """
-Il tuo compito è formulare una risposta tecnica dettagliata basata ESCLUSIVAMENTE sul CONTESTO fornito.
-
-CONTESTO:
-{context}
-
-DOMANDA:
-{query}
-
-RESTRIZIONE NEGATIVA GLOBALE: 
-Proibito iniziare la resposta con autoidentificazione ("Come esperto...", "Ho analizzato..."), descrizioni do processo de análise ou frases de cortesia. 
-La resposta deve essere puramente tecnica, factual e iniziare diretamente com a informação extraída do contexto.
-
-Istruzioni:
-1. Sii preciso e usa terminologia técnica.
-2. Cita sempre a [FONTE: Página X].
-3. Se mancarem informações, sinalize claramente.
+# ─────────────────────────────────────────────
+# RESTRIÇÕES GLOBAIS (injectadas em todos os prompts)
+# ─────────────────────────────────────────────
+_GLOBAL_RESTRICTIONS = """
+RESTRIÇÕES ABSOLUTAS (violação invalida a resposta):
+1. A resposta DEVE iniciar-se directamente com a informação técnica. Zero prefácios.
+2. PROIBIDO: "Como especialista...", "Analisei os ficheiros...", "Com base no meu conhecimento...", 
+   "Aqui está a análise...", "Claro!", "Certamente!", ou qualquer variante de cortesia ou meta-análise.
+3. PROIBIDO cruzar dados de secções distintas a menos que o documento estabeleça explicitamente a ligação.
+4. Cada afirmação factual DEVE ser seguida da sua referência: [Pág.X | Secção: Y].
+5. Se a informação não constar no CONTEXTO, responda: "Informação não disponível no corpus indexado."
 """
 
-CRITIC_PROMPT = """
-Analise a resposta fornecida e verifique:
-1. Alucinações: A resposta contém fatos não presentes no CONTESTO?
-2. Omissões: Foram ignoradas partes importantes do contexto?
-3. Precisão: As citações das páginas estão corretas?
-4. Persona: A resposta contém introduções prolixas ou autoidentificações (PROIBIDO)?
+# ─────────────────────────────────────────────
+# CONSTRUCTOR: Formulação da resposta inicial
+# ─────────────────────────────────────────────
+CONSTRUCTOR_PROMPT = """
+Formule uma resposta técnica baseada EXCLUSIVAMENTE nos fragmentos de CONTEXTO abaixo.
+Cada fragmento é uma UNIDADE INDEPENDENTE. É proibido inferir relações causais entre
+fragmentos de secções diferentes, a menos que o documento as estabeleça explicitamente.
 
-RESPOSTA PARA REVISÃO:
+CONTEXTO:
+{context}
+
+PERGUNTA:
+{query}
+""" + _GLOBAL_RESTRICTIONS + """
+VERIFICAÇÃO DE CONSISTÊNCIA OBRIGATÓRIA (antes de usar um fragmento):
+- O "sujeito" da pergunta (ex: arquitectura de 9 camadas, modelo X) coincide com os dados do fragmento?
+- Se houver discrepância entre os parâmetros da pergunta e os do fragmento, descarte o fragmento e sinalize.
+
+FORMATO DE CITAÇÃO OBRIGATÓRIO: [Pág.X | Secção: Nome_da_Secção]
+"""
+
+# ─────────────────────────────────────────────
+# CRITIC: Verificação de consistência e alucinações
+# ─────────────────────────────────────────────
+CRITIC_PROMPT = """
+Verifique a resposta abaixo contra o CONTEXTO ORIGINAL. Seja cirúrgico.
+
+RESPOSTA A VERIFICAR:
 {answer}
 
 CONTEXTO ORIGINAL:
 {context}
 
-Instruções:
-- Se a resposta estiver perfeita, escreva 'APROVADO'.
-- Caso contrário, indique as correções necessárias, especialmente removendo meta-linguagem.
+LISTA DE VERIFICAÇÃO:
+1. [ ] Cada afirmação possui referência [Pág.X | Secção: Y]?
+2. [ ] Algum facto não está presente no contexto (alucinação)?
+3. [ ] A resposta cruza dados de secções distintas sem suporte explícito do documento?
+4. [ ] A resposta contém autoidentificação, cortesia ou meta-análise (PROIBIDO)?
+5. [ ] Os parâmetros citados (números, IDs) correspondem exactamente ao fragmento usado?
+
+Se todos os pontos passarem: responda apenas 'APROVADO'.
+Caso contrário: liste cada falha com a correcção exacta necessária. Seja directo.
 """
 
+# ─────────────────────────────────────────────
+# SYNTHESIZER: Consolidação da resposta final
+# ─────────────────────────────────────────────
 SYNTHESIZER_PROMPT = """
-Sintetize a resposta final baseando-se na resposta original e no feedback do crítico.
+Consolide a resposta final aplicando as correcções do crítico.
 
-PERGUNTA: {query}
+PERGUNTA ORIGINAL: {query}
 CONTEXTO: {context}
-RESPOSTA REVISADA: {answer}
-
-RESTRIÇÃO MANDATÓRIA:
-Inicie a resposta DIRETAMENTE com os dados técnicos. Elimine qualquer prefixo como "Aqui está a análise...", "Com base no contexto...", "Como solicitado...".
-Mantenha rigorosamente as citações [FONTE: Página X].
+RESPOSTA REVISTA: {answer}
+""" + _GLOBAL_RESTRICTIONS + """
+FORMATO FINAL EXIGIDO:
+- Inicie com a resposta técnica directa.
+- Cada facto: afirmação + referência inline [Pág.X | Secção: Nome].
+- Se dados forem insuficientes: declare explicitamente "Informação não disponível no corpus indexado."
+- Zero prolixidade. Densidade máxima de informação por palavra.
 """

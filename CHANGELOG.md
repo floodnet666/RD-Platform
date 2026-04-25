@@ -37,3 +37,28 @@
 - **Mudança**: Alteração da instrução `CMD` de `npm run dev` para a invocação direta do binário `./node_modules/.bin/vite`.
 - **Detalhe**: O `npm` atuando como PID 1 interceptava o sinal `SIGTERM` gerado pelo `docker-compose stop` e o tratava como um erro anômalo (`npm error signal SIGTERM`). Substituir pelo executável direto do `vite` remove esse ruído sem perda de funcionalidade.
 - **Motivo**: Eliminar falsos positivos de erro no log de shutdown do container frontend.
+
+---
+
+## [2026-04-25] Refactoring: Arquitectura RAG e Engenharia de Contexto
+
+### D1 — Camada de Ingestão: Consolidação de Estrutura
+- **Arquivo**: `backend/src/backend/pdf_extractor.py`
+- **Mudança**: Reescrita completa. Novo algoritmo `_merge_consecutive_headers` com look-ahead multi-nível (`#`, `##`, `###`). Funções auxiliares `_is_terminal_punctuation` extraídas.
+- **Detalhe**: Cada bloco extrai e propaga `current_section` para todos os chunks da página, garantindo zero chunks órfãos de contexto hierárquico.
+
+### D2 — Camada de Recuperação: Refinamento de Pesquisa Híbrida
+- **Arquivo**: `backend/src/backend/vector_db.py`
+- **Mudança**: Reescrita completa. Novo módulo de classificação `_compute_lexical_boost` (5 padrões regex), boost calibrado a +30% (1.30). Nova função `_extract_numeric_anchors` para bónus de ranking proporcional.
+- **Detalhe**: Chunks com âncoras numéricas exactas ganham `+0.05 * matched` no score RRF, sem descartar chunks sem âncoras (evita bloqueio em queries abertas).
+
+### D3 — Camada de Síntese: Isolamento e Validação Lógica
+- **Arquivo**: `backend/src/backend/orchestrator.py`
+- **Mudança**: `retriever_node` reescrito com ancoragem numérica + alfanumérica separadas, fallback para top-2 se contexto ficar vazio. `constructor_node`, `critic_node`, `synthesizer_node`: system prompts explícitos com Diretiva de Fronteira Rígida e Verificação de Consistência de Sujeito/Parâmetro.
+- **Detalhe**: Helper `_extract_numeric_anchors_from_query` isolado. Formato de citação unificado `[Pág.X | Secção: Y]`.
+
+### D4 — Engenharia de Output: Neutralização e Persona
+- **Arquivo**: `backend/src/backend/prompts/rag_prompts.py`
+- **Mudança**: Reescrita completa. `_GLOBAL_RESTRICTIONS` extraídas como constante partilhada pelos 3 prompts. Checklist estruturada no `CRITIC_PROMPT`. Formato `[Pág.X | Secção: Nome]` imposto em todos os prompts.
+- **Detalhe**: Proibição explícita de 10+ padrões de persona leakage. Fallback declarativo para informação ausente do corpus.
+
