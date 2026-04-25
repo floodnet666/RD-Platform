@@ -1,7 +1,7 @@
-# Piano Operativo di Ingegneria: Okolab AI Platform
+# Piano Operativo di Ingegneria: R&D PLATFORM AI Platform
 
 ## 🎯 Obiettivi Strategici
-Costruire una piattaforma IA autonoma per l'automazione della documentazione e l'analisi deterministica dei dati CAD/BIM per Okolab.
+Costruire una piattaforma IA autonoma per l'automazione della documentazione e l'analisi deterministica dei dati CAD/BIM per R&D PLATFORM.
 
 ## 🧱 Sprint di Sviluppo
 

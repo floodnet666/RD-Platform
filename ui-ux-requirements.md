@@ -1,12 +1,12 @@
-# Manifesto di Design Industriale: Okolab UI/UX
+# Manifesto di Design Industriale: R&D PLATFORM UI/UX
 
 ## 🎨 Filosofia Visiva
-L'interfaccia Okolab R&D non è un semplice software; è uno **strumento di precisione**. Il design segue la filosofia del "Minimalismo Funzionale", ispirato agli strumenti di laboratorio di alta precisione.
+L'interfaccia R&D PLATFORM non è un semplice software; è uno **strumento di precisione**. Il design segue la filosofia del "Minimalismo Funzionale", ispirato agli strumenti di laboratorio di alta precisione.
 
 ### Principi Cardine:
 1.  **Integrità del Layout**: Il sistema deve rimanere stabile (100vh) indipendentemente dal volume di dati generati. L'uso di Flexbox con restrizioni di overflow garantisce la persistenza delle sidebars.
 2.  **Gerarchia dell'Informazione**: 
-    - **Rosso Okolab (#C53030)**: Utilizzato esclusivamente per elementi critici, loghi e azioni primarie.
+    - **Rosso R&D PLATFORM (#C53030)**: Utilizzato esclusivamente per elementi critici, loghi e azioni primarie.
     - **Surface 200/300**: Grigio neutro per ridurre l'affaticamento visivo durante sessioni di analisi prolungate.
 3.  **Feedback Dinamico**: Il "Live Terminal" fornisce una trasparenza totale sui processi cognitivi dell'IA, riducendo l'incertezza dell'utente.
 

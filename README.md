@@ -1,14 +1,14 @@
-# OKOLAB R&D PLATFORM
+# R&D PLATFORM
 ### *High Fidelity Engineering Intelligence | Zero-Cloud Architecture*
 
-![Okolab Logo](https://img.shields.io/badge/Okolab-R%26D-C53030?style=for-the-badge)
+![R&D PLATFORM Logo](./logo.png)
 ![Status](https://img.shields.io/badge/Status-Industrial_Ready-10B981?style=for-the-badge)
 ![Engine](https://img.shields.io/badge/Engine-Gemma_2B-38BDF8?style=for-the-badge)
 
 ---
 
 ## 🇮🇹 Manifesto Tecnico (Pozzuoli HQ)
-La piattaforma Okolab R&D è un ecosistema di **Ingegneria Deterministica** progettato per eliminare il divario tra dati grezzi (CAD/BIM) e documentazione tecnica. In un mondo dominato da soluzioni cloud generiche, Okolab opera in isolamento totale, garantendo che la proprietà intellettuale non lasci mai il perimetro aziendale.
+La piattaforma R&D PLATFORM è un ecosistema di **Ingegneria Deterministica** progettato per eliminare il divario tra dati grezzi (CAD/BIM) e documentazione tecnica. In un mondo dominato da soluzioni cloud generiche, R&D PLATFORM opera in isolamento totale, garantendo che la proprietà intellettuale non lasci mai il perimetro aziendale.
 
 ### Core Capabilities:
 1.  **Analisi BIM Deterministica**: Trasformazione automatica di modelli IFC in Distinte Base (BOM) tramite motori **Rust (Polars)** ad alte prestazioni. Il sistema não "adivinha" os quantitativos; esegue query SQL reali sui metadati estratti, garantendo precisione millimetrica.
@@ -53,4 +53,4 @@ Per istruzioni dettagliate sul setup e sulla configurazione dei modelli AI, cons
 docker-compose up --build -d
 ```
 
-*Okolab R&D Platform - Built for Excellence.*
+*R&D PLATFORM - Built for Excellence.*

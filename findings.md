@@ -1,4 +1,4 @@
-# Rapporto di Audit Tecnico: Okolab R&D Platform
+# Rapporto di Audit Tecnico: R&D PLATFORM
 
 ## 📊 Analisi di Sistema
 L'architettura è stata validata secondo i protocolli di **Ingegneria Deterministica**. I seguenti moduli sono stati verificati e certificati per l'uso in produzione locale.

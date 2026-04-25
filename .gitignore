@@ -20,3 +20,4 @@ okolab_rag.db
 
 # Docker
 .docker_data/
+DOCUMENTATION_UPDATE_LOG.md

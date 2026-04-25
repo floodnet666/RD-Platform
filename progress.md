@@ -1,4 +1,4 @@
-# Roadmap dello Sviluppo Industriale: Okolab R&D
+# Roadmap dello Sviluppo Industriale: R&D PLATFORM
 
 ## 🏁 Milestones Completate (100%)
 - [x] **Core Engine**: Implementazione di LangGraph per l'orchestrazione semantica.
