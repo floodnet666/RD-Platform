@@ -9,7 +9,11 @@ L'architettura è stata validata secondo i protocolli di **Ingegneria Determinis
 
 ### 2. Integrità RAG (Retrieval Augmented Generation)
 - **Stato**: Ottimizzato.
-- **Dettagli**: L'uso di `sqlite-vec` permette una ricerca vettoriale locale con latenza <50ms. Le fonti sono citate con metadati di pagina, garantendo la verificabilità dei dati tecnici.
+- **Dettagli**: Implementato per risolvere il limite probabilistico degli LLM. Mentre un'IA standard "indovina" la parola successiva, il nostro RAG **ancora (grounding)** la risposta a documenti tecnici certi. 
+- **Perché**: 
+    - **Eliminazione Allucinazioni**: L'ingegneria non ammette approssimazioni; il RAG forza il sistema a parlare solo sulla base di dati estratti da `sqlite-vec`.
+    - **Verificabilità**: Ogni dato è accompagnato da citazioni millimetriche (Capitolo/Pagina), permettendo all'ingegnere di validare la fonte istantaneamente.
+    - **IP Security**: L'architettura locale garantisce che i manuali proprietari non vengano mai inviati a cloud esterni, proteggendo il know-how aziendale.
 
 ### 3. Sicurezza (Zero-Cloud Policy)
 - **Stato**: Conforme.

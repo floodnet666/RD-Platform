@@ -12,7 +12,7 @@ La piattaforma R&D PLATFORM è un ecosistema di **Ingegneria Deterministica** pr
 
 ### Core Capabilities:
 1.  **Analisi BIM Deterministica**: Trasformazione automatica di modelli IFC in Distinte Base (BOM) tramite motori **Rust (Polars)** ad alte prestazioni. Il sistema não "adivinha" os quantitativos; esegue query SQL reali sui metadati estratti, garantendo precisione millimetrica.
-2.  **RAG Tecnico ad Alta Granularità**: Consultazione di migliaia di documenti PDF tramite **SQLite-Vec**. Ogni risposta è ancorata a una **Citazione Certificata**, indicando il file sorgente, o capítulo e o número exato da página.
+2.  **RAG Tecnico ad Alta Granularità**: Superamento della natura probabilistica dell'IA generativa. Utilizziamo **SQLite-Vec** per ancorare ogni risposta a manuali tecnici reali. Questo non è solo un recupero dati, ma un protocollo di **Ingegneria della Verità**: ogni output è certificato con file, capitolo e pagina esatta, eliminando il rischio di allucinazioni in contesti mission-critical.
 3.  **Documentazione Evolutiva**: Generazione di README, changelog e piani di test del firmware direttamente dalla codebase esistente, analizzando migliaia di righe di código C/Python in pochi secondi.
 
 ---
