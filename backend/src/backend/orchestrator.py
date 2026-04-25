@@ -106,50 +106,65 @@ def bom_node(state: AgentState):
     return {"context": context}
 
 def code_node(state: AgentState):
-    """Nó de análise de firmware/código fonte."""
+    """Nó de análise de firmware/código fonte real (RAG-based)."""
+    print(f"[ORCHESTRATOR] 💻 Analisi Codice Sorgente Reale...")
     query = state["messages"][-1]
     
-    # Simulação de carregamento de arquivo de firmware
-    # Em produção, o sistema mapearia o arquivo solicitado pelo nome
-    sample_code = """
-    void control_loop() {
-        if (read_temp() > 37.5) {
-            fan_speed(MAX);
-        } else {
-            fan_speed(AUTO);
-        }
-    }
-    """
-    blocks = parse_source_code(sample_code, "c")
-    context = "\n---\n".join(blocks)
+    # 1. Recupera blocchi di codice rilevanti dal VectorDB
+    q_emb = embed_model.encode(query).tolist()
+    # Aumentiamo k per avere più contesto del codice
+    context_data = db.search(q_emb, k=5) 
     
-    prompt = f"Analise o seguinte trecho de firmware R&D PLATFORM:\n{context}\n\nTarefa: {query}\n\nResponda no idioma: {state['language']}"
-    answer = call_gemma(prompt, "Você é um Engenheiro de Firmware Sênior da R&D PLATFORM.")
+    if not context_data:
+        return {"context": "Errore: Nessun frammento di codice trovato nel database. Ingerisci un repository prima."}
+
+    context_parts = []
+    for item in context_data:
+        # Filtriamo per assicurarci che siano frammenti di codice (solitamente hanno estensioni .c, .py, .h)
+        context_parts.append(f"[FILE: {item.get('page', 'Unknown')}] {item['text']}")
+    
+    context = "\n---\n".join(context_parts)
+    
+    prompt = f"Analise o seguinte trecho de firmware/código da R&D PLATFORM:\n{context}\n\nTarefa: {query}\n\nInstrução: Baseie sua resposta estritamente no código fornecido. Responda no idioma: {state['language']}"
+    answer = call_gemma(prompt, "Você é um Engenheiro de Firmware Sênior da R&D PLATFORM, especialista em análise estática e lógica de controle.")
     return {"context": answer}
 
 def manual_node(state: AgentState):
-    """Geração de manuais técnicos estruturados (Long-form generation)."""
-    # 1. Identifica os arquivos no contexto
+    """Geração de manuais técnicos reais baseada em dados indexados."""
+    print(f"[ORCHESTRATOR] 📖 Generazione Manuale Tecnico Reale...")
     query = state["messages"][-1]
     
-    # 2. Gera o Esqueleto do Manual
-    prompt_skeleton = f"Com base no projeto R&D PLATFORM, crie a Tabela de conteúdo para um Manual técnico. Idioma: {state['language']}"
-    skeleton = call_gemma(prompt_skeleton, "Você é um Escritor técnico Sênior da R&D PLATFORM.")
+    # 1. Recupero contesto per il manuale
+    q_emb = embed_model.encode(query).tolist()
+    context_data = db.search(q_emb, k=10) # Maggiore contesto per documentazione estesa
     
-    # 3. Gera o conteúdo (Simulado Map-Reduce para o demo)
-    # Em produção, aqui iteraríamos sobre os módulos indexados no VectorDB
-    prompt_content = f"Escreva o capítulo de 'Arquitetura de Controle' do Manual técnico R&D PLATFORM.\n\nPergunta do usuário: {query}\nIdioma: {state['language']}"
-    content = call_gemma(prompt_content, "Você é um Engenheiro de Firmware Sênior.")
+    context_parts = [item['text'] for item in context_data]
+    context = "\n---\n".join(context_parts)
     
-    final_manual = f"# R&D PLATFORM TECHNICAL MANUAL\n\n{skeleton}\n\n---\n\n## CONTENT\n{content}"
+    # 2. Generazione Strutturata
+    prompt = f"""
+    Com base no projeto R&D PLATFORM e nos seguintes dados técnicos:
+    {context}
     
-    # Persistência no disco
-    manual_path = os.path.join("manuals", "manual_gerado_R&D PLATFORM.md")
+    Crie um Manual Técnico estruturado para: {query}
+    Inclua:
+    - Introdução
+    - Arquitetura de Sistema
+    - Instruções de Operação/Implementação
+    - Protocolos de Segurança
+    
+    Idioma: {state['language']}
+    """
+    final_manual = call_gemma(prompt, "Você é um Escritor Técnico Sênior e Engenheiro de Sistemas da R&D PLATFORM.")
+    
+    # Persistência no disco para o usuário baixar
+    manual_filename = f"manual_gerado_{query.replace(' ', '_')[:20]}.md"
+    manual_path = os.path.join("manuals", manual_filename)
     with open(manual_path, "w", encoding="utf-8") as f:
         f.write(final_manual)
     
-    print(f"[MANUAL_GEN] Saved to {manual_path}")
-    return {"context": f"Manual gerado e salvo em: {manual_path}\n\n{final_manual}"}
+    print(f"[MANUAL_GEN] Real manual saved to {manual_path}")
+    return {"context": f"Manual técnico gerado com sucesso baseado na base de conhecimento real.\n\nArquivo salvo em: {manual_path}\n\n{final_manual}"}
 
 def route_edge(state: AgentState):
     if state["intent"] == "manual":
