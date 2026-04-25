@@ -13,10 +13,10 @@ from backend.ifc_parser import IFCParser
 from backend.bom_engine import BOMEngine
 from sentence_transformers import SentenceTransformer
 
-# Inicializa????o do Servidor de Produ????o R&D PLATFORM
+# Inicialização do Servidor de Produ????o R&D PLATFORM
 app = FastAPI(title="OKO-Agent R&D Platform API")
 
-# Configura????o de CORS para o Dashboard R&D PLATFORM
+# Configuração de CORS para o Dashboard R&D PLATFORM
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Inicializa????o do Orquestrador LangGraph (Singleton)
+# Inicialização do Orquestrador LangGraph (Singleton)
 graph = build_graph()
 model = SentenceTransformer('all-MiniLM-L6-v2')
 db = VectorDB("R&D PLATFORM_rag.db")
@@ -69,7 +69,7 @@ class RepoRequest(BaseModel):
 @app.post("/upload")
 async def upload_asset(file: UploadFile = File(...)):
     """
-    Endpoint para ingest??o din??mica de manuais e c??digo.
+    Endpoint para ingestão din??mica de manuais e c??digo.
     """
     temp_path = f"temp_{file.filename}"
     with open(temp_path, "wb") as buffer:
@@ -104,7 +104,7 @@ async def upload_asset(file: UploadFile = File(...)):
             # Aqui simulamos a aceita????o para o live demo.
             return {"status": "success", "type": "code", "message": f"C??digo {file.filename} analisado e pronto para consultas."}
             
-        return {"status": "unsupported", "message": "Formato n??o suportado para ingest??o autom??tica."}
+        return {"status": "unsupported", "message": "Formato n??o suportado para ingestão autom??tica."}
     
     finally:
         if os.path.exists(temp_path):
@@ -162,7 +162,7 @@ async def clone_repository(req: RepoRequest):
                             db.insert(block, emb, 1, source=f"{repo_name}/{file}")
                             indexed_count += 1
         
-        return {"status": "success", "message": f"Reposit??rio {repo_name} indexado. {indexed_count} blocos processados."}
+        return {"status": "success", "message": f"Repositório {repo_name} indexado. {indexed_count} blocos processados."}
     
     except Exception as e:
         error_msg = str(e)
@@ -181,7 +181,7 @@ async def delete_asset(filename: str):
     """
     db = VectorDB("R&D PLATFORM_rag.db")
     # Deleta da tabela de metadados e a tabela vetorial limpa via rowid (se configurado trigger)
-    # No sqlite-vec simples, deletamos os chunks e os vetores ??rf??os
+    # No sqlite-vec simples, deletamos os chunks e os vetores órfãos
     try:
         db.conn.execute("DELETE FROM chunks_vec WHERE rowid IN (SELECT id FROM chunks WHERE source_file = ?)", (filename,))
         db.conn.execute("DELETE FROM chunks WHERE source_file = ?", (filename,))

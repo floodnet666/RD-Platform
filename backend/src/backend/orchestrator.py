@@ -106,11 +106,11 @@ def bom_node(state: AgentState):
     return {"context": context}
 
 def code_node(state: AgentState):
-    """N?? de an??lise de firmware/c??digo fonte."""
+    """Nó de análise de firmware/código fonte."""
     query = state["messages"][-1]
     
-    # Simula????o de carregamento de arquivo de firmware
-    # Em produ????o, o sistema mapearia o arquivo solicitado pelo nome
+    # Simulação de carregamento de arquivo de firmware
+    # Em produção, o sistema mapearia o arquivo solicitado pelo nome
     sample_code = """
     void control_loop() {
         if (read_temp() > 37.5) {
@@ -124,22 +124,22 @@ def code_node(state: AgentState):
     context = "\n---\n".join(blocks)
     
     prompt = f"Analise o seguinte trecho de firmware R&D PLATFORM:\n{context}\n\nTarefa: {query}\n\nResponda no idioma: {state['language']}"
-    answer = call_gemma(prompt, "Voc?? ?? um Engenheiro de Firmware S??nior da R&D PLATFORM.")
+    answer = call_gemma(prompt, "Você é um Engenheiro de Firmware Sênior da R&D PLATFORM.")
     return {"context": answer}
 
 def manual_node(state: AgentState):
-    """Gera????o de manuais t??cnicos estruturados (Long-form generation)."""
+    """Geração de manuais técnicos estruturados (Long-form generation)."""
     # 1. Identifica os arquivos no contexto
     query = state["messages"][-1]
     
     # 2. Gera o Esqueleto do Manual
-    prompt_skeleton = f"Com base no projeto R&D PLATFORM, crie a Tabela de Conte??do para um Manual T??cnico. Idioma: {state['language']}"
-    skeleton = call_gemma(prompt_skeleton, "Voc?? ?? um Escritor T??cnico S??nior da R&D PLATFORM.")
+    prompt_skeleton = f"Com base no projeto R&D PLATFORM, crie a Tabela de conteúdo para um Manual técnico. Idioma: {state['language']}"
+    skeleton = call_gemma(prompt_skeleton, "Você é um Escritor técnico Sênior da R&D PLATFORM.")
     
-    # 3. Gera o conte??do (Simulado Map-Reduce para o demo)
-    # Em produ????o, aqui iterar??amos sobre os m??dulos indexados no VectorDB
-    prompt_content = f"Escreva o cap??tulo de 'Arquitetura de Controle' do Manual T??cnico R&D PLATFORM.\n\nPergunta do usu??rio: {query}\nIdioma: {state['language']}"
-    content = call_gemma(prompt_content, "Voc?? ?? um Engenheiro de Firmware S??nior.")
+    # 3. Gera o conteúdo (Simulado Map-Reduce para o demo)
+    # Em produção, aqui iteraríamos sobre os módulos indexados no VectorDB
+    prompt_content = f"Escreva o capítulo de 'Arquitetura de Controle' do Manual técnico R&D PLATFORM.\n\nPergunta do usuário: {query}\nIdioma: {state['language']}"
+    content = call_gemma(prompt_content, "Você é um Engenheiro de Firmware Sênior.")
     
     final_manual = f"# R&D PLATFORM TECHNICAL MANUAL\n\n{skeleton}\n\n---\n\n## CONTENT\n{content}"
     
