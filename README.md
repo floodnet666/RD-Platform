@@ -30,7 +30,7 @@ La piattaforma opera tramite una rete di **Agenti Autonomi** orchestrati da **La
 Sviluppata seguendo i principi di **Termodinamica del Software**, la piattaforma minimizza l'entropia del codice garantendo prestazioni industriali:
 - **FastAPI & LangGraph**: Per un'orchestrazione di stati asincrona e robusta.
 - **Big Data CAD (Polars)**: Capacità di processare file IFC con decine di migliaia di elementi senza degrado delle prestazioni.
-- **Massive Document Library**: Gestione di migliaia di manuali tramite ricerca vettoriale **SQLite-Vec** locale e istantanea.
+- **Massive Document Library**: Gestione di migliaia di manuali tramite **SQLite-Vec**. Abbiamo rigettato database pesanti come ChromaDB o FAISS per favorire la **portabilità ACID** e la **complessità zero**: un unico file per metadati e vettori, ottimizzato per l'esecuzione locale in air-gap.
 
 ---
 

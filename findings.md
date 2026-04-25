@@ -14,6 +14,10 @@ L'architettura è stata validata secondo i protocolli di **Ingegneria Determinis
     - **Eliminazione Allucinazioni**: L'ingegneria non ammette approssimazioni; il RAG forza il sistema a parlare solo sulla base di dati estratti da `sqlite-vec`.
     - **Verificabilità**: Ogni dato è accompagnato da citazioni millimetriche (Capitolo/Pagina), permettendo all'ingegnere di validare la fonte istantaneamente.
     - **IP Security**: L'architettura locale garantisce che i manuali proprietari non vengano mai inviati a cloud esterni, proteggendo il know-how aziendale.
+- **Razionale Architetturale (Decisione sqlite-vec)**:
+    - **Zero Bloat**: A differenza di ChromaDB o Milvus, `sqlite-vec` non richiede un server separato, riducendo l'entropia del sistema.
+    - **Portabilità Totale**: L'intero ecosistema (dati + vettori) risiede in un unico file `.db`, facilitando il protocollo "Tabula Rasa" e i backup industriali.
+    - **Fusione Relazionale**: Permette query SQL ibride atomiche; possiamo filtrare metadati BIM e cercare similarità vettoriale in un'unica transazione ACID, senza la latenza di coordinamento tra database diversi (es. FAISS + Postgres).
 
 ### 3. Sicurezza (Zero-Cloud Policy)
 - **Stato**: Conforme.
