@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build: ./backend
@@ -16,6 +14,7 @@ services:
       - HF_HUB_OFFLINE=1
       - TRANSFORMERS_OFFLINE=1
       - SENTENCE_TRANSFORMERS_HOME=/app/models
+      - EMBEDDING_MODEL_PATH=/app/models/all-MiniLM-L6-v2
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

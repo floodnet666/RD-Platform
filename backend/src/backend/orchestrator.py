@@ -10,7 +10,8 @@ from backend.code_parser import parse_source_code
 from sentence_transformers import SentenceTransformer
 
 # Singleton instances para evitar overhead de recarregamento
-embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+model_path = os.getenv("EMBEDDING_MODEL_PATH", "all-MiniLM-L6-v2")
+embed_model = SentenceTransformer(model_path)
 db = VectorDB("R&D PLATFORM_rag.db")
 
 class AgentState(TypedDict):

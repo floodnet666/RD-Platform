@@ -27,7 +27,8 @@ app.add_middleware(
 
 # Inicialização do Orquestrador LangGraph (Singleton)
 graph = build_graph()
-model = SentenceTransformer('all-MiniLM-L6-v2')
+model_path = os.getenv("EMBEDDING_MODEL_PATH", "all-MiniLM-L6-v2")
+model = SentenceTransformer(model_path)
 db = VectorDB("R&D PLATFORM_rag.db")
 
 def reset_session():
@@ -80,7 +81,8 @@ async def upload_asset(file: UploadFile = File(...)):
     try:
         if filename.endswith(".pdf"):
             # Processamento RAG Dinâmico
-            model = SentenceTransformer('all-MiniLM-L6-v2')
+            model_path = os.getenv("EMBEDDING_MODEL_PATH", "all-MiniLM-L6-v2")
+            model = SentenceTransformer(model_path)
             db = VectorDB("R&D PLATFORM_rag.db")
             pages = extract_text_from_pdf(temp_path)
             for p in pages:
@@ -159,7 +161,8 @@ async def clone_repository(req: RepoRequest):
         git.Repo.clone_from(auth_url, target_dir, depth=1)
         
         db = VectorDB("R&D PLATFORM_rag.db")
-        model = SentenceTransformer('all-MiniLM-L6-v2')
+        model_path = os.getenv("EMBEDDING_MODEL_PATH", "all-MiniLM-L6-v2")
+        model = SentenceTransformer(model_path)
         
         indexed_count = 0
         for root, _, files in os.walk(target_dir):
