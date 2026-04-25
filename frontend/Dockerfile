@@ -12,4 +12,5 @@ RUN npm install
 EXPOSE 5173
 
 # Vite precisa de --host para aceitar conexões externas ao contêiner
-CMD ["npm", "run", "dev", "--", "--host"]
+# [HOTFIX]: Usar o binário do Vite diretamente para evitar "npm error signal SIGTERM" quando o Docker para o container.
+CMD ["./node_modules/.bin/vite", "--host"]

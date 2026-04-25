@@ -217,7 +217,9 @@ async def chat(request: Request):
     # Execução síncrona do Grafo (Regime de Teste Real)
     final_state = graph.invoke(initial_state)
     
-    return {"response": final_state["context"]}
+    # Retorna a última mensagem (resposta do Sintetizador ou Agente Especializado)
+    response = final_state["messages"][-1] if final_state.get("messages") else "Errore: Nessuna risposta generata."
+    return {"response": response}
 
 if __name__ == "__main__":
     import uvicorn

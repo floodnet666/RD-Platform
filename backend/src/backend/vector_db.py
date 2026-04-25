@@ -2,6 +2,7 @@ import sqlite3
 import sqlite_vec
 import struct
 import threading
+import re
 
 def serialize_f32(vector: list[float]) -> bytes:
     """Serializa uma lista de floats para bytes, formato exigido pelo sqlite-vec."""
@@ -104,21 +105,26 @@ class VectorDB:
     def search_hybrid(self, query_text: str, query_embedding: list[float], k: int = 5) -> list[dict]:
         """
         Fusão Híbrida usando Reciprocal Rank Fusion (RRF).
-        Resolve o problema de termos específicos que o embedding às vezes ignora.
+        [AJUSTE]: Aumenta o peso lexical (BM25) para termos técnicos ou alfanuméricos específicos.
         """
+        # Detectar se a query exige rigor lexical (ex: IDs, versões, termos técnicos com baixa frequência)
+        # Se contiver números ou for curta com termos raros, aplicamos boost.
+        lexical_boost = 1.5 if re.search(r'\d', query_text) or len(query_text.split()) < 4 else 1.0
+        
         vec_results = self.search_vector(query_embedding, k=20)
         fts_results = self.search_fts(query_text, k=20)
         
-        # RRF: score = sum( 1 / (60 + rank) )
+        # RRF: score = sum( (weight) / (60 + rank) )
         scores = {}
         
         for rank, res in enumerate(vec_results):
             cid = res["id"]
-            scores[cid] = scores.get(cid, 0) + 1 / (60 + rank)
+            scores[cid] = scores.get(cid, 0) + 1.0 / (60 + rank)
             
         for rank, res in enumerate(fts_results):
             cid = res["id"]
-            scores[cid] = scores.get(cid, 0) + 1 / (60 + rank)
+            # Aplicamos o boost lexical aqui
+            scores[cid] = scores.get(cid, 0) + (1.0 * lexical_boost) / (60 + rank)
             
         # Ordenar por score e pegar os metadados dos melhores
         sorted_ids = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:k]

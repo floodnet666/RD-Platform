@@ -64,17 +64,38 @@ def query_rewriter_node(state: AgentState):
     return {"messages": [expanded_query.strip()]}
 
 def retriever_node(state: AgentState):
-    """Retriever Híbrido: Recupera context usando busca vetorial e lexical."""
-    print(f"[ORCHESTRATOR] 🔍 Recuperando Contexto Híbrido...")
+    """
+    Retriever Híbrido com Context Isolation.
+    [RIGOR]: Valida âncoras semânticas para evitar contaminação entre seções distintas.
+    """
+    print(f"[ORCHESTRATOR] 🔍 Recuperando Contexto Híbrido com Rigor Semântico...")
     retrieval_query = state["messages"][-1]
     q_emb = embed_model.encode(retrieval_query).tolist()
     context_data = db.search_hybrid(retrieval_query, q_emb, k=5)
     
+    # Extrair IDs/Variáveis/Números da query para validação de âncoras
+    anchors = re.findall(r'\b[A-Z0-9_\-]{2,}\b|\d+(?:\.\d+)?', retrieval_query)
+    
     context_parts = []
     for item in context_data:
+        text = item['text']
         section = item.get("section", "N/A")
-        context_parts.append(f"[FONTE: Página {item['page']} | Sezione: {section}] {item['text']}")
+        
+        # Validação de Âncoras: Se a query tem identificadores específicos, 
+        # eles devem estar presentes no chunk para serem considerados válidos.
+        if anchors:
+            found_anchors = [a for a in anchors if a in text]
+            # Se a query cita um Modelo A, mas o chunk é do Modelo B, descartamos se não houver coabitação
+            if not found_anchors and len(anchors) > 1:
+                print(f"[ORCHESTRATOR] ⚠️ Descartando chunk da Seção '{section}' por falta de âncoras.")
+                continue
+                
+        context_parts.append(f"[FONTE: Página {item['page']} | Seção: {section}] {text}")
     
+    if not context_parts:
+        # Fallback: se o rigor for excessivo, pegamos o melhor resultado sem filtro para não travar
+        context_parts = [f"[FONTE: Página {item['page']} | Seção: {item.get('section', 'N/A')}] {item['text']}" for item in context_data[:1]]
+
     context = "\n---\n".join(context_parts)
     return {"context": context}
 
@@ -125,9 +146,9 @@ def bom_node(state: AgentState):
     
     try:
         results = engine.execute_sql(sql_clean)
-        return {"context": f"Analisi BOM:\n{results}"}
+        return {"messages": [f"Analisi BOM:\n{results}"]}
     except Exception as e:
-        return {"context": f"Errore BOM: {str(e)}"}
+        return {"messages": [f"Errore BOM: {str(e)}"]}
 
 def code_node(state: AgentState):
     """Análise de código real."""

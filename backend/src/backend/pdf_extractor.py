@@ -6,14 +6,24 @@ def sanitize_markdown(text):
     """
     Limpa artefatos de extração, unindo cabeçalhos fragmentados.
     Ex: ## Physics \n ## Informed -> ## Physics Informed
+    [REFINAMENTO]: Une headers consecutivos apenas se não houver pontuação terminal.
     """
     # Remove quebras de linha excessivas
     text = re.sub(r'\n{3,}', '\n\n', text)
     
-    # Une headers fragmentados: ## Palavra \n ## Outra -> ## Palavra Outra
-    # Loop para pegar fragmentos múltiplos (3 ou mais palavras)
+    # Une headers fragmentados: ## Parte1 \n ## Parte2 -> ## Parte1 Parte2
+    # Critério: Se o primeiro header não termina com pontuação (.!?:;), aglutina.
+    def merge_headers(match):
+        h1_content = match.group(1).strip()
+        h2_content = match.group(2).strip()
+        # Se h1 não termina com pontuação terminal, unimos
+        if h1_content and not re.search(r'[.!?:;]$', h1_content):
+            return f"## {h1_content} {h2_content}"
+        return match.group(0)
+
+    # Aplicamos recursivamente para capturar múltiplos fragmentos (ex: ## A \n ## B \n ## C)
     for _ in range(3):
-        text = re.sub(r'## (.*?)\n+## (.*?)', r'## \1 \2', text)
+        text = re.sub(r'## (.*?)\n+## (.*?)', merge_headers, text)
     
     return text
 
