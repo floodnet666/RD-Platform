@@ -80,11 +80,11 @@ export default function App() {
         const data = await response.json();
         if (data.status === 'success') {
           addLog('result', data.message);
-          setMessages(prev => [...prev, { role: 'agent', content: `✅ Sucesso! Repo privado indexado: ${data.message}` }]);
+          setMessages(prev => [...prev, { role: 'agent', content: t.token_success }]);
           setPendingRepoUrl(null);
         } else {
           addLog('system', 'AUTH FAILED AGAIN.');
-          setMessages(prev => [...prev, { role: 'agent', content: '❌ Falha na autenticação. O token é válido?' }]);
+          setMessages(prev => [...prev, { role: 'agent', content: t.token_error }]);
         }
       } catch (err) {
         addLog('system', 'GITHUB CLONE FAILED.');
@@ -110,7 +110,7 @@ export default function App() {
           if (data.status === 'need_token') {
             addLog('system', 'PRIVATE REPO DETECTED.');
             setPendingRepoUrl(repoUrl);
-            setMessages(prev => [...prev, { role: 'agent', content: '🔒 Este repositório parece ser privado. Por favor, cole seu Personal Access Token (PAT) abaixo para que eu possa acessá-lo.' }]);
+            setMessages(prev => [...prev, { role: 'agent', content: t.private_repo }]);
             setLoading(false);
             return;
           }
