@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 
 def run_ingestion():
     # Reset do Banco para novo Schema (Páginas)
-    db_path = "okolab_rag.db"
+    db_path = "R&D PLATFORM_rag.db"
     if os.path.exists(db_path):
         os.remove(db_path)
         

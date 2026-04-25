@@ -51,12 +51,12 @@ def test_05_manual_generation():
     res = requests.post(f"{BASE_URL}/chat", json=payload)
     assert res.status_code == 200
     resp = res.json()["response"].upper()
-    success = "MANUAL" in resp or "OKOLAB" in resp
+    success = "MANUAL" in resp or "R&D PLATFORM" in resp
     log_test("Requirement: General Technical Documentation", success)
     assert success
 
 def run_suite():
-    print("\n--- OKOLAB R&D E2E VALIDATION SUITE ---")
+    print("\n--- R&D PLATFORM E2E VALIDATION SUITE ---")
     try:
         test_01_assets_sync()
         test_02_bom_cad_parsing()

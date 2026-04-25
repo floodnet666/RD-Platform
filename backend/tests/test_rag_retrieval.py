@@ -8,7 +8,7 @@ def test_lid35_retrieval_integrity():
     Teste de Integração Real: Verifica se o motor de busca consegue encontrar 
     a menção ao sensor LID-35 no banco de dados populado.
     """
-    db_path = "okolab_rag.db"
+    db_path = "R&D PLATFORM_rag.db"
     assert os.path.exists(db_path), "ERRO: Banco de dados não encontrado. Ingestão falhou."
     
     # Inicializa motores reais
@@ -35,7 +35,7 @@ def test_lid35_retrieval_integrity():
 
 def test_db_not_empty():
     """Verifica se a ingestão realmente persistiu dados."""
-    db_path = "okolab_rag.db"
+    db_path = "R&D PLATFORM_rag.db"
     db = VectorDB(db_path)
     count = db.conn.execute("SELECT count(*) FROM chunks").fetchone()[0]
     assert count > 0, "FALHA: O banco de dados está vazio após a ingestão."

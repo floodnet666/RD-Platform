@@ -7,7 +7,7 @@ def test_extract_text_valid_pdf():
     Testa se o parser consegue extrair texto do manual real.
     Garante integridade com o mundo real (Integration-like test).
     """
-    pdf_path = r"D:\OKOlab\manuals\UM-BL3-Top-Stage_User-Manual-BL3_EN.pdf"
+    pdf_path = r"D:\R&D PLATFORM\manuals\UM-BL3-Top-Stage_User-Manual-BL3_EN.pdf"
     
     if not os.path.exists(pdf_path):
         pytest.skip(f"Arquivo de teste não encontrado: {pdf_path}")

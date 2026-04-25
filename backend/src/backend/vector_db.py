@@ -11,7 +11,7 @@ class VectorDB:
     Wrapper ultraleve para sqlite-vec (zero sqlalchemy, zero orm).
     Complexidade ciclomática mínima.
     """
-    def __init__(self, db_path: str = "okolab_rag.db", dimension: int = 384):
+    def __init__(self, db_path: str = "R&D PLATFORM_rag.db", dimension: int = 384):
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.enable_load_extension(True)
         sqlite_vec.load(self.conn)

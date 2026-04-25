@@ -13,10 +13,10 @@ from backend.ifc_parser import IFCParser
 from backend.bom_engine import BOMEngine
 from sentence_transformers import SentenceTransformer
 
-# Inicializa????o do Servidor de Produ????o Okolab
+# Inicializa????o do Servidor de Produ????o R&D PLATFORM
 app = FastAPI(title="OKO-Agent R&D Platform API")
 
-# Configura????o de CORS para o Dashboard Okolab
+# Configura????o de CORS para o Dashboard R&D PLATFORM
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -28,7 +28,7 @@ app.add_middleware(
 # Inicializa????o do Orquestrador LangGraph (Singleton)
 graph = build_graph()
 model = SentenceTransformer('all-MiniLM-L6-v2')
-db = VectorDB("okolab_rag.db")
+db = VectorDB("R&D PLATFORM_rag.db")
 
 def reset_session():
     """Garantisce una sessione pulita: elimina file manuali e resetta il DB."""
@@ -43,7 +43,7 @@ def reset_session():
             except Exception as e: print(f"Errore durante la pulizia di {f}: {e}")
             
     # 2. Reset del Database Vettoriale (Mantenendo la struttura)
-    db = VectorDB("okolab_rag.db")
+    db = VectorDB("R&D PLATFORM_rag.db")
     try:
         db.conn.execute("DELETE FROM chunks")
         db.conn.execute("DELETE FROM chunks_vec")
@@ -81,7 +81,7 @@ async def upload_asset(file: UploadFile = File(...)):
         if filename.endswith(".pdf"):
             # Processamento RAG Din??mico
             model = SentenceTransformer('all-MiniLM-L6-v2')
-            db = VectorDB("okolab_rag.db")
+            db = VectorDB("R&D PLATFORM_rag.db")
             pages = extract_text_from_pdf(temp_path)
             for p in pages:
                 chunks = chunk_text(p["text"])
@@ -94,7 +94,7 @@ async def upload_asset(file: UploadFile = File(...)):
             # Processamento de Engenharia BIM -> BOM
             parser = IFCParser(temp_path)
             df = parser.to_dataframe()
-            # Salva como base para o motor BOM da Okolab
+            # Salva como base para o motor BOM da R&D PLATFORM
             bom_path = os.path.join("manuals", f"bom_{file.filename}.csv")
             df.write_csv(bom_path)
             return {"status": "success", "type": "csv", "message": f"Modelo IFC {file.filename} convertido em BOM de materiais."}
@@ -146,7 +146,7 @@ async def clone_repository(req: RepoRequest):
     try:
         git.Repo.clone_from(auth_url, target_dir, depth=1)
         
-        db = VectorDB("okolab_rag.db")
+        db = VectorDB("R&D PLATFORM_rag.db")
         model = SentenceTransformer('all-MiniLM-L6-v2')
         
         indexed_count = 0
@@ -179,7 +179,7 @@ async def delete_asset(filename: str):
     """
     Remove um ativo e todos os seus vetores do banco de dados.
     """
-    db = VectorDB("okolab_rag.db")
+    db = VectorDB("R&D PLATFORM_rag.db")
     # Deleta da tabela de metadados e a tabela vetorial limpa via rowid (se configurado trigger)
     # No sqlite-vec simples, deletamos os chunks e os vetores ??rf??os
     try:

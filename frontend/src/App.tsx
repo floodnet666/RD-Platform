@@ -191,7 +191,7 @@ export default function App() {
           <div style={{width: 32, height: 32, borderRadius: 6, backgroundColor: 'var(--oko-red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'}}>
             <Cpu size={20} />
           </div>
-          <span className="project-title">OKOLAB <span style={{color: 'var(--oko-red)'}}>R&D</span> PLATFORM</span>
+          <span className="project-title">R&D PLATFORM <span style={{color: 'var(--oko-red)'}}>R&D</span> PLATFORM</span>
         </div>
         
         <div className="header-controls">

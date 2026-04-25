@@ -11,7 +11,7 @@ from sentence_transformers import SentenceTransformer
 
 # Singleton instances para evitar overhead de recarregamento
 embed_model = SentenceTransformer('all-MiniLM-L6-v2')
-db = VectorDB("okolab_rag.db")
+db = VectorDB("R&D PLATFORM_rag.db")
 
 class AgentState(TypedDict):
     messages: Annotated[list[str], operator.add]
@@ -34,7 +34,7 @@ def router_node(state: AgentState):
     Rispondi SOLO con il nome della categoria.
     """
     
-    intent_raw = call_gemma(prompt, "Sei il Cervello di Routing di Okolab R&D.")
+    intent_raw = call_gemma(prompt, "Sei il Cervello di Routing di R&D PLATFORM.")
     intent = intent_raw.strip().upper()
     
     # Normalizzazione e Fallback
@@ -57,8 +57,8 @@ def rag_node(state: AgentState):
     
     context = "\n---\n".join(context_parts)
     
-    prompt = f"Contexto Técnico Okolab:\n{context}\n\nPergunta: {query}\n\nInstrução: Responda obrigatoriamente no idioma [{state['language'].upper()}]. Seja técnico e cite a [Página X]."
-    answer = call_gemma(prompt, f"Você é um assistente de engenharia da Okolab. Responda em {state['language']}.")
+    prompt = f"Contexto Técnico R&D PLATFORM:\n{context}\n\nPergunta: {query}\n\nInstrução: Responda obrigatoriamente no idioma [{state['language'].upper()}]. Seja técnico e cite a [Página X]."
+    answer = call_gemma(prompt, f"Você é um assistente de engenharia da R&D PLATFORM. Responda em {state['language']}.")
     return {"context": answer}
 
 def bom_node(state: AgentState):
@@ -123,8 +123,8 @@ def code_node(state: AgentState):
     blocks = parse_source_code(sample_code, "c")
     context = "\n---\n".join(blocks)
     
-    prompt = f"Analise o seguinte trecho de firmware Okolab:\n{context}\n\nTarefa: {query}\n\nResponda no idioma: {state['language']}"
-    answer = call_gemma(prompt, "Voc?? ?? um Engenheiro de Firmware S??nior da Okolab.")
+    prompt = f"Analise o seguinte trecho de firmware R&D PLATFORM:\n{context}\n\nTarefa: {query}\n\nResponda no idioma: {state['language']}"
+    answer = call_gemma(prompt, "Voc?? ?? um Engenheiro de Firmware S??nior da R&D PLATFORM.")
     return {"context": answer}
 
 def manual_node(state: AgentState):
@@ -133,18 +133,18 @@ def manual_node(state: AgentState):
     query = state["messages"][-1]
     
     # 2. Gera o Esqueleto do Manual
-    prompt_skeleton = f"Com base no projeto Okolab, crie a Tabela de Conte??do para um Manual T??cnico. Idioma: {state['language']}"
-    skeleton = call_gemma(prompt_skeleton, "Voc?? ?? um Escritor T??cnico S??nior da Okolab.")
+    prompt_skeleton = f"Com base no projeto R&D PLATFORM, crie a Tabela de Conte??do para um Manual T??cnico. Idioma: {state['language']}"
+    skeleton = call_gemma(prompt_skeleton, "Voc?? ?? um Escritor T??cnico S??nior da R&D PLATFORM.")
     
     # 3. Gera o conte??do (Simulado Map-Reduce para o demo)
     # Em produ????o, aqui iterar??amos sobre os m??dulos indexados no VectorDB
-    prompt_content = f"Escreva o cap??tulo de 'Arquitetura de Controle' do Manual T??cnico Okolab.\n\nPergunta do usu??rio: {query}\nIdioma: {state['language']}"
+    prompt_content = f"Escreva o cap??tulo de 'Arquitetura de Controle' do Manual T??cnico R&D PLATFORM.\n\nPergunta do usu??rio: {query}\nIdioma: {state['language']}"
     content = call_gemma(prompt_content, "Voc?? ?? um Engenheiro de Firmware S??nior.")
     
-    final_manual = f"# OKOLAB TECHNICAL MANUAL\n\n{skeleton}\n\n---\n\n## CONTENT\n{content}"
+    final_manual = f"# R&D PLATFORM TECHNICAL MANUAL\n\n{skeleton}\n\n---\n\n## CONTENT\n{content}"
     
     # Persistência no disco
-    manual_path = os.path.join("manuals", "manual_gerado_okolab.md")
+    manual_path = os.path.join("manuals", "manual_gerado_R&D PLATFORM.md")
     with open(manual_path, "w", encoding="utf-8") as f:
         f.write(final_manual)
     
