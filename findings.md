@@ -6,6 +6,10 @@ L'architettura è stata validata secondo i protocolli di **Ingegneria Determinis
 ### 1. Motore BOM (BIM/CAD)
 - **Stato**: Certificato.
 - **Dettagli**: Estrazione di metadati tramite `IfcOpenShell` con precisione del 100% su modelli strutturali. L'integrazione con `Polars` garantisce risposte SQL deterministiche, eliminando le allucinazioni tipiche degli LLM generici.
+- **Razionale Architetturale (Decisione Polars)**:
+    - **Performance Multi-threaded (Rust Core)**: A differenza di Pandas (single-threaded), Polars è scritto in Rust e utilizza l'intera potenza del processore via SIMD e multithreading parallelo, essenziale per file IFC con >100k elementi.
+    - **Efficienza Termodinamica (Lazy API)**: L'uso di `LazyFrame` permette l'ottimizzazione del piano di query prima dell'esecuzione, minimizzando il consumo di memoria e l'entropia computazionale.
+    - **Memory Safety (Arrow)**: Basato su Apache Arrow, Polars garantisce una gestione della memoria superiore e predicibile, evitando i sovraccarichi tipici delle strutture dati legacy di Pandas.
 
 ### 2. Integrità RAG (Retrieval Augmented Generation)
 - **Stato**: Ottimizzato.
