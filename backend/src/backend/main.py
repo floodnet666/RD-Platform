@@ -13,7 +13,7 @@ from backend.ifc_parser import IFCParser
 from backend.bom_engine import BOMEngine
 from sentence_transformers import SentenceTransformer
 
-# Inicialização do Servidor de Produ????o R&D PLATFORM
+# Inicialização do Servidor de Produção R&D PLATFORM
 app = FastAPI(title="OKO-Agent R&D Platform API")
 
 # Configuração de CORS para o Dashboard R&D PLATFORM
@@ -69,7 +69,7 @@ class RepoRequest(BaseModel):
 @app.post("/upload")
 async def upload_asset(file: UploadFile = File(...)):
     """
-    Endpoint para ingestão din??mica de manuais e c??digo.
+    Endpoint para ingestão dinâmica de manuais e código.
     """
     temp_path = f"temp_{file.filename}"
     with open(temp_path, "wb") as buffer:
@@ -79,7 +79,7 @@ async def upload_asset(file: UploadFile = File(...)):
     
     try:
         if filename.endswith(".pdf"):
-            # Processamento RAG Din??mico
+            # Processamento RAG Dinâmico
             model = SentenceTransformer('all-MiniLM-L6-v2')
             db = VectorDB("R&D PLATFORM_rag.db")
             pages = extract_text_from_pdf(temp_path)
@@ -100,11 +100,11 @@ async def upload_asset(file: UploadFile = File(...)):
             return {"status": "success", "type": "csv", "message": f"Modelo IFC {file.filename} convertido em BOM de materiais."}
         
         elif any(filename.endswith(ext) for ext in [".c", ".py", ".h", ".cpp"]):
-            # Em produ????o, salvar??amos no repo de firmware. 
-            # Aqui simulamos a aceita????o para o live demo.
-            return {"status": "success", "type": "code", "message": f"C??digo {file.filename} analisado e pronto para consultas."}
+            # Em produção, salvaríamos no repo de firmware. 
+            # Aqui simulamos a aceitação para o live demo.
+            return {"status": "success", "type": "code", "message": f"Código {file.filename} analisado e pronto para consultas."}
             
-        return {"status": "unsupported", "message": "Formato n??o suportado para ingestão autom??tica."}
+        return {"status": "unsupported", "message": "Formato não suportado para ingestão automática."}
     
     finally:
         if os.path.exists(temp_path):
@@ -130,7 +130,7 @@ async def list_assets():
 @app.post("/clone")
 async def clone_repository(req: RepoRequest):
     """
-    Clona um reposit??rio remoto (p??blico ou privado) e ingere todo o c??digo.
+    Clona um repositório remoto (público ou privado) e ingere todo o código.
     """
     auth_url = req.repo_url
     if req.token:
@@ -193,7 +193,7 @@ async def delete_asset(filename: str):
 @app.post("/chat")
 async def chat(request: Request):
     """
-    Endpoint de integra????o real com suporte a i18n e log de debug.
+    Endpoint de integração real com suporte a i18n e log de debug.
     """
     body = await request.json()
     print(f"DEBUG PAYLOAD: {body}")
@@ -201,7 +201,7 @@ async def chat(request: Request):
     msg = body.get("message", "")
     lang = body.get("lang", "it")
     
-    # Estado inicial do Grafo com idioma expl??cito
+    # Estado inicial do Grafo com idioma explícito
     initial_state = {
         "messages": [msg],
         "intent": "",
@@ -209,12 +209,12 @@ async def chat(request: Request):
         "language": lang
     }
     
-    # Execu????o s??ncrona do Grafo (Regime de Teste Real)
+    # Execução síncrona do Grafo (Regime de Teste Real)
     final_state = graph.invoke(initial_state)
     
     return {"response": final_state["context"]}
 
 if __name__ == "__main__":
     import uvicorn
-    print("Iniciando API de Produ????o na porta 8000...")
+    print("Iniciando API de Produção na porta 8000...")
     uvicorn.run(app, host="127.0.0.1", port=8000)

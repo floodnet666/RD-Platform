@@ -267,7 +267,7 @@ export default function App() {
         <section className="workspace">
           <div className="workspace-header">
             <Layout size={14} style={{display: 'inline', marginRight: 8}} />
-            {t.title} // SESSION: OKO-ALPHA-2026
+            {t.title} // SESSION: R&D-ALPHA-2026
           </div>
           
           <div className="collaboration-area">
