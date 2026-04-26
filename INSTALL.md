@@ -17,7 +17,7 @@ This platform is an **Air-Gapped Engineering Intelligence** system. It operates 
 ### 1. Model Preparation (Ollama)
 The orchestrator relies on the **Gemma** architecture for semantic routing and SQL translation. Pull the weights locally:
 ```bash
-ollama pull gemma:2b
+ollama pull hf.co/mradermacher/gemma-4-E2B-it-uncensored-GGUF:Q8_0
 ```
 
 ### 2. Environment Configuration

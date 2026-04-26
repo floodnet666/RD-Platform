@@ -1,5 +1,13 @@
 # CHANGELOG - OKOlab RD Platform
 
+## [2026-04-26] Atualização de Infraestrutura
+
+### 1. Documentação Técnica e Dependências de Modelo
+- **Arquivo**: `INSTALL.md`
+- **Mudança**: Atualização da diretiva de pull do Ollama. Substituição de `gemma:2b` por `hf.co/mradermacher/gemma-4-E2B-it-uncensored-GGUF:Q8_0`.
+- **Detalhe**: Migração para variante uncensored com quantização Q8_0 (8-bit) para garantir integridade analítica e precisão matemática superior em extrações de engenharia.
+- **Motivo**: O modelo anterior apresentava recusas por "segurança" (falsos positivos) em consultas sobre infraestrutura crítica e possuía erro residual elevado em cálculos de BOM.
+
 ## [2026-04-25] Refinamento de Robustez do Pipeline RAG
 
 ### 1. Saneamento de Ingestão (Header Merging)
